@@ -1,0 +1,10 @@
+#!/bin/bash
+
+result=$(make test);
+find=`echo "$result"|grep OK`;
+if [ -n "$find" ]; then
+	exit 0;
+fi
+
+echo "$result"
+exit 1
