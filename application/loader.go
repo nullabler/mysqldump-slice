@@ -6,26 +6,32 @@ import (
 )
 
 func (app *App) LoadTables() (err error) {
-	res, err := app.db.Query(`SHOW tables`)
+	rows, err := app.db.Query(fmt.Sprintf(`SHOW FULL TABLES FROM %s`, app.conf.Db()))
 	if err != nil {
 		return
 	}
 
-	for res.Next() {
-		var name string
-		err = res.Scan(&name)
+	for rows.Next() {
+		var tabName, tabType string
+		err = rows.Scan(&tabName, &tabType)
 		if err != nil {
 			return
 		}
-		app.tables[name] = relationship.Table{}
+
+		if tabType != "BASE TABLE" {
+			continue
+		}
+		app.tables[tabName] = relationship.NewTable()
 	}
 	return nil
 }
 
 func (app *App) LoadDependence() (err error) {
-	relations, err := app.getRelations()
-	for _, rel := range relations {
-		err = app.addDependence(rel.FrTab(), rel.FkCol())
+	if err = app.getRelations(); err != nil {
+		return
+	}
+	for _, rel := range app.relations {
+		err = app.addDependence(rel)
 		if err != nil {
 			return
 		}
@@ -34,12 +40,12 @@ func (app *App) LoadDependence() (err error) {
 	return
 }
 
-func (app *App) addDependence(frTab, fkCol string) (err error) {
-	if !app.colExist(frTab, "id") {
+func (app *App) addDependence(rel relationship.Relation) (err error) {
+	if !app.colExist(rel.FrTab(), "id") {
 		return
 	}
 
-	isInt, err := app.isIntByCol(frTab, "id")
+	isInt, err := app.isIntByCol(rel.FrTab(), "id")
 	if err != nil {
 		return
 	}
@@ -49,32 +55,33 @@ func (app *App) addDependence(frTab, fkCol string) (err error) {
 		sqlOrder += "ORDER BY id DESC"
 	}
 
-	tab := app.tables[frTab]
+	tab := app.tables[rel.FrTab()]
 	rows, err := app.db.Query(fmt.Sprintf("SELECT %s FROM %s GROUP BY %s %s LIMIT %d", 
-		fkCol, frTab, fkCol, sqlOrder, app.conf.Limit()))
+		rel.FkCol(), rel.FrTab(), rel.FkCol(), sqlOrder, app.conf.Limit()))
 	if err != nil {
 		return
 	}
 	
-	isInt, err = app.isIntByCol(frTab, fkCol)
+	isInt, err = app.isIntByCol(rel.FrTab(), rel.FkCol())
 	if err != nil {
 		return
 	}
 
 	for rows.Next() {
-		err = tab.Parse(isInt, rows)
+		err = tab.Parse(rel, isInt, rows)
 		if err != nil {
 			continue
 		}
 	}
-	app.tables[frTab] = tab
+	app.tables[rel.FrTab()] = tab
 	return
 }
 
-func (app *App) getRelations() (list []relationship.Relation, err error) {
+func (app *App) getRelations() (err error) {
 	sql := `select fks.table_name as foreign_table,
 			fks.referenced_table_name as primary_table,
-			kcu.column_name as fk_column
+			kcu.column_name as fk_column,
+			kcu.referenced_column_name as ref_column
 		FROM information_schema.referential_constraints fks
 		JOIN information_schema.key_column_usage kcu
 			ON fks.constraint_schema = kcu.table_schema
@@ -99,7 +106,7 @@ func (app *App) getRelations() (list []relationship.Relation, err error) {
 		if err != nil {
 			return
 		}
-		list = append(list, rel)
+		app.relations = append(app.relations, rel)
 	}
 	return
 }

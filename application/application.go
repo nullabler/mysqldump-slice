@@ -12,13 +12,14 @@ type App struct {
 	conf *config.Conf
 
 	db       *sql.DB
-	tables   map[string]relationship.Table
+	tables   map[string]*relationship.Table
+	relations []relationship.Relation
 }
 
 func NewApp() *App {
 	return &App{
 		conf: config.NewConf(),
-		tables: make(map[string]relationship.Table),
+		tables: make(map[string]*relationship.Table),
 	}
 }
 

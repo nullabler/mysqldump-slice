@@ -1,13 +1,22 @@
 package relationship
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 type Table struct {
-	depIds  []int
-	depUids []string
+	depInt map[Relation][]int
+	depStr map[Relation][]string
 }
 
-func (tab *Table) Parse(isInt bool, rows *sql.Rows) (err error) {
+func NewTable() *Table {
+	return &Table{
+		depInt: make(map[Relation][]int),
+		depStr: make(map[Relation][]string),
+	}
+}
+
+func (tab *Table) Parse(rel Relation, isInt bool, rows *sql.Rows) (err error) {
 	var id int
 	var uid string
 
@@ -19,9 +28,9 @@ func (tab *Table) Parse(isInt bool, rows *sql.Rows) (err error) {
 
 	if err == nil {
 		if isInt {
-			tab.depIds = append(tab.depIds, id)
+			tab.depInt[rel] = append(tab.depInt[rel], id)
 		} else {
-			tab.depUids = append(tab.depUids, uid)
+			tab.depStr[rel] = append(tab.depStr[rel], uid)
 		}
 	}
 	return

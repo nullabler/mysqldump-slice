@@ -8,3 +8,9 @@ services:
     volumes:
       - '.:/app'
     working_dir: /app
+    networks:
+      - test 
+
+networks:
+  getic:
+    name: test 
