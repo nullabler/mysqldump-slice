@@ -2,36 +2,21 @@ package application
 
 import (
 	"fmt"
-	"html/template"
-	"mysqldump-slice/tmpl"
-	"os"
+	"strings"
 )
 
-func (app *App) DumpStructDB() {
-	file, _ := os.Create(app.conf.Filename())
-	defer file.Close()
-
-	tm, err := template.New("dump").Parse(tmpl.Dump())
-	if err != nil {
-		panic(err.Error())
-	}
-
-	var d, c string
-	_ = app.db.QueryRow(fmt.Sprintf("SHOW CREATE DATABASE %s", app.conf.Db())).Scan(&d, &c)
-
-	param := tmpl.Param{
-		Host: app.conf.Host(),
-		Database: app.conf.Db(),
-		CreateDatabase: c,
-		ServerVersion: "0.0.1",
-	}
-
-	if err = tm.Execute(file, param); err != nil {
-		panic(err.Error())
-	}
-
+func (app *App) DumpStruct() {
+	app.ExecDump(fmt.Sprintf("--no-data --routines %s", app.conf.Db()))
 }
 
-func (app *App) DumpDataDb() {
+func (app *App) DumpFullData() {
+	app.ExecDump(fmt.Sprintf(
+		"--skip-triggers --no-create-info %s %s", 
+		app.conf.Db(),
+		strings.Join(app.conf.TablesForFullData(), " "),
+	))
+}
 
+func (app *App) DumpSliceData() {
+	app.dd(app.relations)
 }

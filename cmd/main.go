@@ -24,8 +24,11 @@ func main() {
 
 	//app.NormilizeTable()
 
-	app.DumpStructDB()
-	app.DumpDataDb()
+	//app.RemoveFile()
+	//app.DumpStruct()
+	//app.DumpFullData()
+	app.DumpSliceData()
 
 	log.Println("Finish dump")
 }
+

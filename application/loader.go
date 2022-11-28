@@ -14,6 +14,7 @@ func (app *App) LoadTables() (err error) {
 	for rows.Next() {
 		var tabName, tabType string
 		err = rows.Scan(&tabName, &tabType)
+
 		if err != nil {
 			return
 		}
@@ -21,8 +22,10 @@ func (app *App) LoadTables() (err error) {
 		if tabType != "BASE TABLE" {
 			continue
 		}
+
 		app.tables[tabName] = relationship.NewTable()
 	}
+
 	return nil
 }
 
@@ -30,6 +33,7 @@ func (app *App) LoadDependence() (err error) {
 	if err = app.getRelations(); err != nil {
 		return
 	}
+
 	for _, rel := range app.relations {
 		err = app.addDependence(rel)
 		if err != nil {
@@ -37,6 +41,7 @@ func (app *App) LoadDependence() (err error) {
 		}
 		return
 	}
+
 	return
 }
 

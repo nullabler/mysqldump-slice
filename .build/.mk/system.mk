@@ -7,7 +7,7 @@ down: ## stop project
 	docker-compose down
 
 watch: ## watch project
-	docker-compose up 
+	docker-compose up $(ARGS) 
 
 state: ## show state
 	docker-compose ps

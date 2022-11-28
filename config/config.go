@@ -12,16 +12,21 @@ type Conf struct {
 	database string
 	limit    int
 	filename string
+	shell string
+	tablesForFullData []string
 }
 
 func NewConf() *Conf {
-	conf := Conf{}
+	conf := Conf{
+		tablesForFullData: []string{"test_table"},
+	}
 	flag.StringVar(&conf.user, "u", "root", "User")
 	flag.StringVar(&conf.password, "p", "1234", "Password")
-	flag.StringVar(&conf.host, "h", "db:3306", "Host:Port")
+	flag.StringVar(&conf.host, "h", "mysql", "Host:Port")
 	flag.StringVar(&conf.database, "d", "test", "Database")
 	flag.IntVar(&conf.limit, "l", 10, "Limit")
 	flag.StringVar(&conf.filename, "f", "dump.sql", "Filename")
+	flag.StringVar(&conf.shell, "s", "sh", "Shell")
 	flag.Parse()
 	return &conf 
 }
@@ -29,6 +34,14 @@ func NewConf() *Conf {
 func (conf *Conf) GetDbUrl() string {
 	return fmt.Sprintf("%s:%s@tcp(%s)/%s",
 		conf.user, conf.password, conf.host, conf.database)
+}
+
+func (conf *Conf) User() string {
+	return conf.user
+}
+
+func (conf *Conf) Passwd() string {
+	return conf.password
 }
 
 func (conf *Conf) Host() string {
@@ -45,4 +58,12 @@ func (conf *Conf) Limit() int {
 
 func (conf *Conf) Filename() string {
 	return conf.filename
+}
+
+func (conf *Conf) Shell() string {
+	return conf.shell
+}
+
+func (conf *Conf) TablesForFullData() []string {
+	return conf.tablesForFullData
 }

@@ -1,6 +1,6 @@
 FROM golang:1.17.2-alpine3.14
 
-RUN apk update && apk add git ffmpeg ca-certificates && update-ca-certificates
+RUN apk update && apk add mysql-client git ffmpeg ca-certificates && update-ca-certificates
 
 WORKDIR /app
 COPY . /app

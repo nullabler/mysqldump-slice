@@ -21,13 +21,24 @@ package tmpl
 {{ .CreateDatabase }}
 
 USE {{ .Database }};
+
+{{ .Tables }}
 `
 
-type Param struct {
+type TemplateParams struct {
 	Host string
 	Database string
 	CreateDatabase string
 	ServerVersion string
+	Tables string
+}
+
+func NewTemplateParams(host string, db string) *TemplateParams {
+	return &TemplateParams{
+		Host: host,
+		Database: db, 
+		ServerVersion: "0.0.1",
+	}
 }
 
 func Dump() string {
