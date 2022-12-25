@@ -23,7 +23,7 @@ func NewConf() *Conf {
 	flag.StringVar(&conf.user, "u", "root", "User")
 	flag.StringVar(&conf.password, "p", "1234", "Password")
 	flag.StringVar(&conf.host, "h", "mysql", "Host:Port")
-	flag.StringVar(&conf.database, "d", "ubntshop", "Database")
+	flag.StringVar(&conf.database, "d", "db", "Database")
 	flag.IntVar(&conf.limit, "l", 3, "Limit")
 	flag.StringVar(&conf.filename, "f", "dump.sql", "Filename")
 	flag.StringVar(&conf.shell, "s", "sh", "Shell")
