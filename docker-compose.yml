@@ -11,5 +11,5 @@ services:
 
 networks:
   default:
-    name: test 
+    name: getic 
     external: true

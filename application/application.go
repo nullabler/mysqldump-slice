@@ -66,6 +66,19 @@ func (app *App) exec(call string) {
 	}
 }
 
+func (app *App) getTab(tabName string) *relationship.Table {
+	tab := app.tables[tabName]
+	if tab == nil {
+		tab = relationship.NewTable(tabName)
+	}
+
+	return tab 
+}
+
+func (app *App) setTab(tab *relationship.Table) {
+	app.tables[tab.Name()] = tab
+}
+
 func (app *App) dd(data ...interface{}) {
 	fmt.Printf("%+v\n", data)
 }

@@ -1,13 +1,13 @@
 ##@ System:
 
 up: ## start project
-	docker-compose up -d
+	docker-compose up --build -d
 
 down: ## stop project
 	docker-compose down
 
 watch: ## watch project
-	docker-compose up $(ARGS) 
+	docker-compose up 
 
 state: ## show state
 	docker-compose ps

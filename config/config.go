@@ -18,13 +18,13 @@ type Conf struct {
 
 func NewConf() *Conf {
 	conf := Conf{
-		tablesForFullData: []string{"test_table"},
+		tablesForFullData: []string{"migration_versions"},
 	}
 	flag.StringVar(&conf.user, "u", "root", "User")
 	flag.StringVar(&conf.password, "p", "1234", "Password")
 	flag.StringVar(&conf.host, "h", "mysql", "Host:Port")
-	flag.StringVar(&conf.database, "d", "test", "Database")
-	flag.IntVar(&conf.limit, "l", 10, "Limit")
+	flag.StringVar(&conf.database, "d", "ubntshop", "Database")
+	flag.IntVar(&conf.limit, "l", 3, "Limit")
 	flag.StringVar(&conf.filename, "f", "dump.sql", "Filename")
 	flag.StringVar(&conf.shell, "s", "sh", "Shell")
 	flag.Parse()

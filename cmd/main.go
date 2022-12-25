@@ -27,7 +27,7 @@ func main() {
 	//app.RemoveFile()
 	//app.DumpStruct()
 	//app.DumpFullData()
-	app.DumpSliceData()
+	//app.DumpSliceData()
 
 	log.Println("Finish dump")
 }
