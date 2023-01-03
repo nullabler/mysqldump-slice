@@ -14,20 +14,26 @@ func main() {
 		app.Panic(err)
 	}
 
-	if err := app.LoadTables(); err != nil {
-		app.Panic(err)
+	app.LoadRelations()
+	tableList := app.FindAllTables()
+	for _, tabName := range tableList {
+		prKeyList := app.PrimaryKeys(tabName)
+
+		app.Collector().PushTable(tabName)	
+		app.LoadIds(tabName, prKeyList)
 	}
 
-	if err := app.LoadDependence(); err != nil {
-		app.Panic(err)
+	for _, tabName := range tableList {
+		app.LoadDeps(tabName)
 	}
-
-	//app.NormilizeTable()
 
 	//app.RemoveFile()
-	//app.DumpStruct()
-	//app.DumpFullData()
-	//app.DumpSliceData()
+	app.DumpStruct()
+	app.DumpFullData()
+
+	for _, tabName := range tableList {
+		app.DumpSliceData(tabName, app.Collector().WhereId(tabName))
+	}
 
 	log.Println("Finish dump")
 }

@@ -9,8 +9,8 @@ RUN apk update && apk add mysql-client
 WORKDIR /app
 COPY . /app
 
-RUN go mod download
+RUN go mod tidy 
 RUN go get github.com/githubnemo/CompileDaemon
 RUN go install github.com/githubnemo/CompileDaemon
 
-ENTRYPOINT CompileDaemon --build="go build -o cmd/main cmd/main.go" --command="./cmd/main"
+ENTRYPOINT CompileDaemon --build="go build -o cmd/main cmd/main.go" --command="./cmd/main /app/slice.yaml"

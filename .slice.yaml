@@ -1,0 +1,12 @@
+host: "localhost"
+database: "test"
+user: "admin"
+password: "admin"
+filename: "dump_slice.sql"
+
+tables:
+  limit: 100
+  full:
+    - migration_versions
+  ignore:
+    - test 

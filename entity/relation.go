@@ -1,4 +1,4 @@
-package relationship
+package entity 
 
 import "database/sql"
 

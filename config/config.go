@@ -1,69 +1,51 @@
 package config
 
 import (
-	"flag"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"gopkg.in/yaml.v3"
 )
 
 type Conf struct {
-	user     string
-	password string
-	host     string
-	database string
-	limit    int
-	filename string
-	shell string
-	tablesForFullData []string
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+	Host     string `yaml:"host"`
+	Database string `yaml:"database"`
+	Filename string `yaml:"filename"`
+	Tables   Tables `yaml:"tables"`
+
+	shell	 string
 }
 
-func NewConf() *Conf {
-	conf := Conf{
-		tablesForFullData: []string{"migration_versions"},
+type Tables struct {
+	Limit int `yaml:"limit"`
+	Full []string `yaml:"full"`
+	Ignore []string `yaml:"ignore"`
+}
+
+func NewConf(pathToFile string) *Conf {
+	conf := &Conf{
+		shell: "/bin/sh",
 	}
-	flag.StringVar(&conf.user, "u", "root", "User")
-	flag.StringVar(&conf.password, "p", "1234", "Password")
-	flag.StringVar(&conf.host, "h", "mysql", "Host:Port")
-	flag.StringVar(&conf.database, "d", "db", "Database")
-	flag.IntVar(&conf.limit, "l", 3, "Limit")
-	flag.StringVar(&conf.filename, "f", "dump.sql", "Filename")
-	flag.StringVar(&conf.shell, "s", "sh", "Shell")
-	flag.Parse()
-	return &conf 
+
+	yamlFile, err := ioutil.ReadFile(pathToFile)
+    if err != nil {
+		log.Printf("ReadFile: %v", err)
+    }
+
+	if err := yaml.Unmarshal(yamlFile, conf); err != nil {
+        log.Fatalf("Unmarshal: %v", err)
+    }
+
+    return conf
 }
 
 func (conf *Conf) GetDbUrl() string {
 	return fmt.Sprintf("%s:%s@tcp(%s)/%s",
-		conf.user, conf.password, conf.host, conf.database)
-}
-
-func (conf *Conf) User() string {
-	return conf.user
-}
-
-func (conf *Conf) Passwd() string {
-	return conf.password
-}
-
-func (conf *Conf) Host() string {
-	return conf.host
-}
-
-func (conf *Conf) Db() string {
-	return conf.database
-}
-
-func (conf *Conf) Limit() int {
-	return conf.limit
-}
-
-func (conf *Conf) Filename() string {
-	return conf.filename
+		conf.User, conf.Password, conf.Host, conf.Database)
 }
 
 func (conf *Conf) Shell() string {
 	return conf.shell
-}
-
-func (conf *Conf) TablesForFullData() []string {
-	return conf.tablesForFullData
 }
