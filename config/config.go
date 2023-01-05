@@ -22,6 +22,14 @@ type Tables struct {
 	Limit int `yaml:"limit"`
 	Full []string `yaml:"full"`
 	Ignore []string `yaml:"ignore"`
+	Specs []Specs `yaml:"specs"`
+}
+
+type Specs struct {
+	Name string `yaml:"name"`
+	Pk []string `yaml:"pk"`
+	Sort []string `yaml:"sort"`
+	Limit int `yaml:"limit"`
 }
 
 func NewConf(pathToFile string) *Conf {
@@ -48,4 +56,24 @@ func (conf *Conf) GetDbUrl() string {
 
 func (conf *Conf) Shell() string {
 	return conf.shell
+}
+
+func (conf *Conf) Specs(tabName string) (Specs, bool) {
+	for _, specs := range conf.Tables.Specs {
+		if specs.Name == tabName {
+			return specs, true
+		}
+	}
+
+	return Specs{}, false
+}
+
+func (conf *Conf) Ignore(tabName string) bool {
+	for _, ignore := range conf.Tables.Ignore {
+		if ignore == tabName {
+			return true
+		}
+	}
+
+	return false
 }

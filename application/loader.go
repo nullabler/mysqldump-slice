@@ -2,16 +2,33 @@ package application
 
 import (
 	"fmt"
+	"strings"
 )
 
 func (app *App) LoadIds(tabName string, prKeyList []string) {
+	specs, ok := app.conf.Specs(tabName)
 	if len(prKeyList) == 0 {
-		return
+		if !ok || len(specs.Pk) == 0 {  
+			return
+		}
+		prKeyList = specs.Pk
+	}
+
+	var sort string
+	if ok && len(specs.Sort) > 0 {
+		sort = strings.Join(specs.Sort, ", ")
+	} else {
+		sort = strings.Join(prKeyList, ", ")
+	}
+
+	limit := app.conf.Tables.Limit
+	if ok && specs.Limit > 0 {
+		limit = specs.Limit
 	}
 
 	for _, key := range prKeyList {
-		rows, err := app.db.Query(fmt.Sprintf("SELECT %s FROM %s LIMIT %d", 
-			key, tabName, app.conf.Tables.Limit))
+		rows, err := app.db.Query(fmt.Sprintf("SELECT %s FROM %s ORDER BY %s DESC LIMIT %d", 
+			key, tabName, sort, limit))
 
 		IsIntByCol, errIsIntByCol := app.IsIntByCol(tabName, key) 
 		if err != nil || errIsIntByCol != nil {
@@ -26,8 +43,11 @@ func (app *App) LoadIds(tabName string, prKeyList []string) {
 
 func (app *App) LoadDeps(tabName string) {
 	for _, rel := range app.Collector().RelationList(tabName) { 
-		whereId := app.Collector().WhereId(tabName);
-		
+		whereId, ok := app.Collector().WhereId(tabName);
+		if !ok {
+			continue
+		}
+
 		rows, err := app.db.Query(fmt.Sprintf("SELECT %s FROM %s WHERE %s", 
 			rel.Col(), tabName, whereId))
 

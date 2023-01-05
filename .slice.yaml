@@ -10,3 +10,10 @@ tables:
     - migration_versions
   ignore:
     - test 
+  specs:
+    - name: user
+      pk:
+        - uuid
+      sort:
+        - updated_at
+      limit: 5

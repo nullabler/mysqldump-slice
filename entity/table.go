@@ -27,12 +27,14 @@ func (tab *Table[V, T]) Name() string {
 	return tab.name
 }
 
-func (tab *Table[V, T]) Where() (query string) {
+func (tab *Table[V, T]) Where() (query string, ok bool) {
+	ok = false
 	if len(tab.id) > 0 {
-		query += "id IN (" + tab.WhereId() + ")"
+		query, _ = tab.WhereId()
 	}
 
 	if len(tab.depId) > 0 {
+		ok = true
 		if len(tab.id) > 0 {
 			query += " OR "
 		}
@@ -41,18 +43,20 @@ func (tab *Table[V, T]) Where() (query string) {
 	return
 }
 
-func (tab *Table[V, T]) WhereId() string {
+func (tab *Table[V, T]) WhereId() (string, bool) {
 	var query []string
+	ok := false
 
 	for colName, list := range tab.id {
 		var idList []string
+		ok = true
 		for _, item := range list {
 			idList = append(idList, item.String())
 		}
 		query = append(query, colName + " IN (" + strings.Join(idList, ", ") + ")")
 	}
 
-	return strings.Join(query, " AND ")
+	return strings.Join(query, " AND "), ok
 }
 
 func (tab *Table[V, T]) whereDepId() string {
@@ -76,7 +80,9 @@ func (tab *Table[V, T]) ParseId(colName string, rows *sql.Rows) (err error) {
 		return
 	}
 
-	tab.id[colName] = append(tab.id[colName], *id)
+	if id != nil {
+		tab.id[colName] = append(tab.id[colName], *id)
+	}
 
 	return
 }
@@ -87,8 +93,10 @@ func (tab *Table[V, T]) PushDep(rel Relation, rows *sql.Rows) (err error) {
 	if err = rows.Scan(&depId); err != nil {
 		return
 	}
-
-	tab.depId[rel] = append(tab.depId[rel], *depId)
+	
+	if depId != nil {
+		tab.depId[rel] = append(tab.depId[rel], *depId)
+	}
 
 	return
 }

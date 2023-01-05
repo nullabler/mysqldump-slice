@@ -76,7 +76,7 @@ func (app *App) FindAllTables() (tableList []string) {
 			return
 		}
 
-		if tabType != "BASE TABLE" {
+		if tabType != "BASE TABLE" || app.conf.Ignore(tabName) {
 			continue
 		}
 
@@ -93,8 +93,9 @@ func (app *App) PrimaryKeys(tabName string) (keyList []string) {
 	}
 
 	for rows.Next() {
-		var key, tmp string
-		if err = rows.Scan(&tmp, &tmp, &tmp, &tmp, &key); err != nil {
+		var t *string
+		var key string
+		if err = rows.Scan(&t, &t, &t, &t, &key, &t, &t, &t, &t, &t, &t, &t, &t, &t); err != nil {
 			return
 		}
 

@@ -71,12 +71,12 @@ func (app *App) Collector() *service.Collector {
 }
 
 func (app *App) exec(call string) {
-	app.dd(app.conf.Shell(), call)
 	cmd := exec.Command(app.conf.Shell(), "-c", call)
-
+	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		app.Panic(err)
 	}
+
 }
 
 func (app *App) dd(data ...interface{}) {

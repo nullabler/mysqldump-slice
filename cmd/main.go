@@ -27,12 +27,12 @@ func main() {
 		app.LoadDeps(tabName)
 	}
 
-	//app.RemoveFile()
+	app.RemoveFile()
 	app.DumpStruct()
 	app.DumpFullData()
 
 	for _, tabName := range tableList {
-		app.DumpSliceData(tabName, app.Collector().WhereId(tabName))
+		app.DumpSliceData(tabName, app.Collector().Where(tabName))
 	}
 
 	log.Println("Finish dump")

@@ -2,7 +2,6 @@ package service
 
 import (
 	"database/sql"
-	"fmt"
 	"mysqldump-slice/entity"
 	"mysqldump-slice/entity/types"
 	"strings"
@@ -47,21 +46,33 @@ func (ctl *Collector) PushTable(tabName string) {
 func (ctl *Collector) Where(tabName string) string {
 	var list []string
 
-	list = append(list, ctl.tabIntInt[tabName].Where())
-	list = append(list, ctl.tabIntStr[tabName].Where())
-	list = append(list, ctl.tabStrInt[tabName].Where())
-	list = append(list, ctl.tabStrStr[tabName].Where())
+	if res, ok := ctl.tabIntInt[tabName].Where(); ok {
+		list = append(list, res)
+	}
+	if res, ok := ctl.tabIntStr[tabName].Where(); ok {
+		list = append(list, res)
+	}
+	if res, ok := ctl.tabStrInt[tabName].Where(); ok {
+		list = append(list, res)
+	}
+	if res, ok := ctl.tabStrStr[tabName].Where(); ok {
+		list = append(list, res)
+	}
 
 	return strings.Join(list, " OR ")
 }
 
-func (ctl *Collector) WhereId(tabName string) string {
+func (ctl *Collector) WhereId(tabName string) (string, bool) {
 	var list []string
+	
+	if res, ok := ctl.tabIntInt[tabName].WhereId(); ok {
+		list = append(list, res)
+	}
+	if res, ok := ctl.tabStrStr[tabName].WhereId(); ok {
+		list = append(list, res)
+	}
 
-	list = append(list, ctl.tabIntInt[tabName].WhereId())
-	list = append(list, ctl.tabStrStr[tabName].WhereId())
-
-	return strings.Join(list, " AND ")
+	return strings.Join(list, " AND "), true 
 }
 
 func (ctl *Collector) ParseId(tabName string, colName string, isInt bool, rows *sql.Rows) {
@@ -75,7 +86,6 @@ func (ctl *Collector) ParseId(tabName string, colName string, isInt bool, rows *
 }
 
 func (ctl *Collector) PushDep(tabName string, isIntDep bool, rel entity.Relation, rows *sql.Rows) {
-	fmt.Println("DEBUGING PushDep:", tabName, isIntDep, ctl.tabIntInt[tabName], ctl.tabStrInt[tabName])
 	if ctl.tabIntInt[tabName] != nil {
 		if isIntDep {
 			ctl.tabIntInt[tabName].PushDep(rel, rows)

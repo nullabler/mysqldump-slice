@@ -23,10 +23,6 @@ func (app *App) DumpSliceData(tabName, where string) {
 		}
 
 		if len(where) > 0 {
-			if tabName == "orders" {
-				fmt.Println(tabName, where)
-			}
-
 			app.ExecDump(fmt.Sprintf(
 				"--skip-triggers --no-create-info %s %s --where=\"%s\"",
 				app.conf.Database,
