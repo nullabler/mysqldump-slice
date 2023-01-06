@@ -7,7 +7,6 @@ import (
 	"mysqldump-slice/config"
 	"mysqldump-slice/entity"
 	"mysqldump-slice/service"
-	"mysqldump-slice/tmpl"
 	"os"
 	"os/exec"
 
@@ -17,10 +16,9 @@ import (
 type App struct {
 	conf *config.Conf
 
-	db       *sql.DB
+	db        *sql.DB
 	collector *service.Collector
 	relations []entity.Relation
-	templateParams *tmpl.TemplateParams
 }
 
 func NewApp() *App {
@@ -31,9 +29,8 @@ func NewApp() *App {
 	app := &App{
 		conf: config.NewConf(os.Args[1]),
 	}
-	
+
 	app.collector = service.NewCollector()
-	app.templateParams = tmpl.NewTemplateParams(app.conf.Host, app.conf.Database)
 
 	return app
 }
@@ -58,12 +55,12 @@ func (app *App) ExecDump(call string) {
 		app.conf.Password,
 		app.conf.Host,
 		call,
-		app.conf.Filename,
+		app.conf.Filename(),
 	))
 }
 
 func (app *App) RemoveFile() {
-	app.exec(fmt.Sprintf("rm -f %s 2> /dev/null", app.conf.Filename))
+	app.exec(fmt.Sprintf("rm -f %s 2> /dev/null", app.conf.Filename()))
 }
 
 func (app *App) Collector() *service.Collector {
@@ -74,6 +71,7 @@ func (app *App) exec(call string) {
 	cmd := exec.Command(app.conf.Shell(), "-c", call)
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
+		app.dd(call)
 		app.Panic(err)
 	}
 

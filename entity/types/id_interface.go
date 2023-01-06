@@ -4,4 +4,3 @@ type IdInterface interface {
 	~string | ~int
 	String() string
 }
-

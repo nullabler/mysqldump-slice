@@ -1,12 +1,12 @@
-package entity 
+package entity
 
 import "database/sql"
 
 type Relation struct {
-	table string
-	column     string
-	refTable string
-	refColumn    string
+	table     string
+	column    string
+	refTable  string
+	refColumn string
 }
 
 func (rel *Relation) Parse(rows *sql.Rows) (err error) {

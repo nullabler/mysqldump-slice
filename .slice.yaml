@@ -2,7 +2,10 @@ host: "localhost"
 database: "test"
 user: "admin"
 password: "admin"
-filename: "dump_slice.sql"
+filename:
+  prefix: "short"
+  gzip: Yes
+  date-format: "2006-01-02_15:04:05"
 
 tables:
   limit: 100
@@ -17,3 +20,4 @@ tables:
       sort:
         - updated_at
       limit: 5
+      condition: "updated_at > NOW() - INTERVAL 1 WEEK"

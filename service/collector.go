@@ -16,9 +16,8 @@ type Collector struct {
 	tabStrStr map[string]*entity.Table[types.UidType, types.UidType]
 }
 
-
 func NewCollector() *Collector {
-	return &Collector {
+	return &Collector{
 		relationList: make(map[string][]entity.Relation),
 
 		tabIntInt: make(map[string]*entity.Table[types.IdType, types.IdType]),
@@ -37,10 +36,10 @@ func (ctl *Collector) RelationList(tabName string) []entity.Relation {
 }
 
 func (ctl *Collector) PushTable(tabName string) {
-		ctl.tabIntInt[tabName] = entity.NewTable[types.IdType, types.IdType](tabName)
-		ctl.tabIntStr[tabName] = entity.NewTable[types.IdType, types.UidType](tabName)
-		ctl.tabStrInt[tabName] = entity.NewTable[types.UidType, types.IdType](tabName)
-		ctl.tabStrStr[tabName] = entity.NewTable[types.UidType, types.UidType](tabName)
+	ctl.tabIntInt[tabName] = entity.NewTable[types.IdType, types.IdType](tabName)
+	ctl.tabIntStr[tabName] = entity.NewTable[types.IdType, types.UidType](tabName)
+	ctl.tabStrInt[tabName] = entity.NewTable[types.UidType, types.IdType](tabName)
+	ctl.tabStrStr[tabName] = entity.NewTable[types.UidType, types.UidType](tabName)
 }
 
 func (ctl *Collector) Where(tabName string) string {
@@ -64,7 +63,7 @@ func (ctl *Collector) Where(tabName string) string {
 
 func (ctl *Collector) WhereId(tabName string) (string, bool) {
 	var list []string
-	
+
 	if res, ok := ctl.tabIntInt[tabName].WhereId(); ok {
 		list = append(list, res)
 	}
@@ -72,7 +71,7 @@ func (ctl *Collector) WhereId(tabName string) (string, bool) {
 		list = append(list, res)
 	}
 
-	return strings.Join(list, " AND "), true 
+	return strings.Join(list, " AND "), true
 }
 
 func (ctl *Collector) ParseId(tabName string, colName string, isInt bool, rows *sql.Rows) {

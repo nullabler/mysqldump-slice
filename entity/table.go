@@ -6,19 +6,18 @@ import (
 	"strings"
 )
 
-
 type Table[V, T types.IdInterface] struct {
 	name string
 
-	id map[string][]V
+	id    map[string][]V
 	depId map[Relation][]T
 }
 
 func NewTable[V, T types.IdInterface](name string) *Table[V, T] {
-	return &Table[V,T]{
+	return &Table[V, T]{
 		name: name,
 
-		id: make(map[string][]V),
+		id:    make(map[string][]V),
 		depId: make(map[Relation][]T),
 	}
 }
@@ -53,7 +52,7 @@ func (tab *Table[V, T]) WhereId() (string, bool) {
 		for _, item := range list {
 			idList = append(idList, item.String())
 		}
-		query = append(query, colName + " IN (" + strings.Join(idList, ", ") + ")")
+		query = append(query, colName+" IN ("+strings.Join(idList, ", ")+")")
 	}
 
 	return strings.Join(query, " AND "), ok
@@ -67,7 +66,7 @@ func (tab *Table[V, T]) whereDepId() string {
 		for _, item := range list {
 			depFields = append(depFields, item.String())
 		}
-		query = append(query, rel.refColumn + " IN (" + strings.Join(depFields, ", ") + ")")
+		query = append(query, rel.refColumn+" IN ("+strings.Join(depFields, ", ")+")")
 	}
 
 	return strings.Join(query, " OR ")
@@ -93,7 +92,7 @@ func (tab *Table[V, T]) PushDep(rel Relation, rows *sql.Rows) (err error) {
 	if err = rows.Scan(&depId); err != nil {
 		return
 	}
-	
+
 	if depId != nil {
 		tab.depId[rel] = append(tab.depId[rel], *depId)
 	}

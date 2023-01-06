@@ -2,7 +2,6 @@ package types
 
 import "fmt"
 
-
 type UidType string
 
 func (str UidType) String() string {

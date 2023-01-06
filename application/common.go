@@ -25,7 +25,7 @@ func (app *App) IsIntByCol(tab, col string) (bool, error) {
 
 func (app *App) ColExist(tab, col string) bool {
 	sql := fmt.Sprintf(`SHOW columns FROM %s LIKE '%s'`, tab, col)
-	var a,b,c,d,f,g interface{} 
+	var a, b, c, d, f, g interface{}
 	_ = app.db.QueryRow(sql).Scan(&a, &b, &c, &d, &f, &g)
 	return a != nil
 }

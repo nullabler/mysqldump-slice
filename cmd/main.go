@@ -9,7 +9,7 @@ func main() {
 	log.Println("Start dump")
 	app := application.NewApp()
 	defer app.Close()
-	
+
 	if err := app.InitApp(); err != nil {
 		app.Panic(err)
 	}
@@ -19,7 +19,7 @@ func main() {
 	for _, tabName := range tableList {
 		prKeyList := app.PrimaryKeys(tabName)
 
-		app.Collector().PushTable(tabName)	
+		app.Collector().PushTable(tabName)
 		app.LoadIds(tabName, prKeyList)
 	}
 
@@ -37,4 +37,3 @@ func main() {
 
 	log.Println("Finish dump")
 }
-
