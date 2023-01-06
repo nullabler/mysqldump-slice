@@ -35,5 +35,7 @@ func main() {
 		app.DumpSliceData(tabName, app.Collector().Where(tabName))
 	}
 
+	app.Save()
+
 	log.Println("Finish dump")
 }

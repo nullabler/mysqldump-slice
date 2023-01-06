@@ -20,6 +20,7 @@ type Conf struct {
 
 	shell             string
 	defaultDateFormat string
+	Tmp               string
 }
 
 type File struct {
@@ -43,10 +44,11 @@ type Specs struct {
 	Condition string   `yaml:"condition"`
 }
 
-func NewConf(pathToFile string) *Conf {
+func NewConf(pathToFile, tmpFilename string) *Conf {
 	conf := &Conf{
 		shell:             "/bin/sh",
 		defaultDateFormat: "2006-01-02_15_04",
+		Tmp:               tmpFilename,
 	}
 
 	yamlFile, err := ioutil.ReadFile(pathToFile)

@@ -26,8 +26,14 @@ func NewApp() *App {
 		log.Fatal("Not found yaml file")
 	}
 
+	f, err := os.CreateTemp("", "")
+	if err != nil {
+		log.Fatal(err)
+	}
+	f.Close()
+
 	app := &App{
-		conf: config.NewConf(os.Args[1]),
+		conf: config.NewConf(os.Args[1], f.Name()),
 	}
 
 	app.collector = service.NewCollector()
@@ -42,6 +48,7 @@ func (app *App) InitApp() (err error) {
 
 func (app *App) Close() {
 	app.db.Close()
+	os.Remove(app.conf.Tmp)
 }
 
 func (app *App) Panic(err error) {
@@ -55,12 +62,25 @@ func (app *App) ExecDump(call string) {
 		app.conf.Password,
 		app.conf.Host,
 		call,
-		app.conf.Filename(),
+		app.conf.Tmp,
 	))
 }
 
 func (app *App) RemoveFile() {
 	app.exec(fmt.Sprintf("rm -f %s 2> /dev/null", app.conf.Filename()))
+}
+
+func (app *App) Save() {
+	action := "cp %s %s"
+	if app.conf.File.Gzip {
+		action = "cat %s | gzip > %s.gz"
+	}
+
+	app.exec(fmt.Sprintf(
+		action,
+		app.conf.Tmp,
+		app.conf.Filename(),
+	))
 }
 
 func (app *App) Collector() *service.Collector {
