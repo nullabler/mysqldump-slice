@@ -6,12 +6,12 @@ import (
 )
 
 type Collect struct {
-	tables []string
+	tables  []string
 	relList map[string][]Relation
 	tabList map[string]*Tab
 }
 
-func NewCollect() *Collect{
+func NewCollect() *Collect {
 	return &Collect{
 		relList: make(map[string][]Relation),
 		tabList: make(map[string]*Tab),

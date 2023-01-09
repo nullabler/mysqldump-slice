@@ -7,15 +7,15 @@ import (
 
 type Loader struct {
 	conf *repository.Conf
-	db *repository.Db
-	cli *repository.Cli
+	db   *repository.Db
+	cli  *repository.Cli
 }
 
 func NewLoader(conf *repository.Conf, db *repository.Db, cli *repository.Cli) *Loader {
 	return &Loader{
 		conf: conf,
-		db: db,
-		cli: cli,
+		db:   db,
+		cli:  cli,
 	}
 }
 
@@ -50,10 +50,10 @@ func (l *Loader) Dependences(collect *entity.Collect) error {
 			if len(keys) > 0 {
 				continue
 			}
-			
+
 			l.db.LoadDeps(tabName, collect, rel, keys)
 		}
-		
+
 	}
 	return nil
 }

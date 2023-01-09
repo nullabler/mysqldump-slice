@@ -22,7 +22,6 @@ func (tab *Tab) Push(col, val string) {
 	tab.keys[col] = append(tab.keys[col], val)
 }
 
-
 func (tab *Tab) Keys() map[string][]string {
 	return tab.keys
 }

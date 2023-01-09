@@ -9,7 +9,7 @@ import (
 
 type Db struct {
 	name string
-	con *sql.DB
+	con  *sql.DB
 }
 
 func NewDb(driver, url, name string) (*Db, error) {
@@ -20,7 +20,7 @@ func NewDb(driver, url, name string) (*Db, error) {
 
 	return &Db{
 		name: name,
-		con: con,
+		con:  con,
 	}, nil
 }
 
@@ -172,7 +172,7 @@ func (db *Db) LoadDeps(tabName string, collect *entity.Collect, rel entity.Relat
 
 	isIntDep, errIsInt := db.IsIntByCol(tabName, rel.Col())
 	if err != nil || errIsInt != nil {
-		return	
+		return
 	}
 
 	for rows.Next() {

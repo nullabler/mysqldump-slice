@@ -10,15 +10,15 @@ import (
 )
 
 type App struct {
-	loader *service.Loader
-	dumper *service.Dumper
+	loader    *service.Loader
+	dumper    *service.Dumper
 	normalize *service.Normalize
 }
 
 func NewApp(conf *repository.Conf, db *repository.Db, cli *repository.Cli) *App {
 	return &App{
-		loader: service.NewLoader(conf, db, cli),
-		dumper: service.NewDumper(conf, cli, db),
+		loader:    service.NewLoader(conf, db, cli),
+		dumper:    service.NewDumper(conf, cli, db),
 		normalize: service.NewNormalize(),
 	}
 }

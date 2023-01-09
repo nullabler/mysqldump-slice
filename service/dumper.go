@@ -9,15 +9,15 @@ import (
 
 type Dumper struct {
 	conf *repository.Conf
-	cli *repository.Cli
-	db *repository.Db
+	cli  *repository.Cli
+	db   *repository.Db
 }
 
 func NewDumper(conf *repository.Conf, cli *repository.Cli, db *repository.Db) *Dumper {
 	return &Dumper{
 		conf: conf,
-		cli: cli,
-		db: db,
+		cli:  cli,
+		db:   db,
 	}
 }
 
@@ -43,7 +43,7 @@ func (d *Dumper) Slice(collect *entity.Collect) error {
 		if d.hasTabNameLikeFullData(tabName) {
 			continue
 		}
-		
+
 		keys := collect.Tab(tabName).Keys()
 		where := d.db.Where(keys)
 		if len(where) > 0 {
