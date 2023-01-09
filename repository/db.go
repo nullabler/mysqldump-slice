@@ -172,7 +172,7 @@ func (db *Db) LoadDeps(tabName string, collect *entity.Collect, rel entity.Relat
 	rows, err := db.con.Query(fmt.Sprintf("SELECT %s FROM %s WHERE %s",
 		rel.Col(),
 		tabName,
-		strings.Join(db.Where(keys), " AND "),
+		db.WhereAll(keys),
 	))
 
 	isIntDep, errIsInt := db.IsIntByCol(tabName, rel.Col())
@@ -185,7 +185,34 @@ func (db *Db) LoadDeps(tabName string, collect *entity.Collect, rel entity.Relat
 	}
 }
 
-func (db *Db) Where(keys map[string][]string) (where []string) {
+func (db *Db) WhereAll(keys map[string][]string) string {
+	var whereList []string
+	for _, list := range db.Where(keys) {
+		whereList = append(whereList, "(" + strings.Join(list, ", ") + ")")
+	}
+
+	return strings.Join(whereList, " AND ")
+}
+
+func (db *Db) WhereSlice(point *Point) []string {
+	var where []string
+	var query []string
+	for n := 0; n < point.Count; n++ {
+		col, i := point.Next(n)
+		query = append(query, point.Keys[col][i])
+
+		if point.Current == 0 {
+			where = append(where, strings.Join(query, " AND "))
+			query = []string{}
+		}
+		
+	}
+
+	return where
+}
+
+func (db *Db) Where(keys map[string][]string) map[string][]string {
+	where := make(map[string][]string)
 	for col, valList := range keys {
 		limit := 0
 		for start := 0; start < len(valList); start += db.conf.LimitCli {
@@ -194,9 +221,9 @@ func (db *Db) Where(keys map[string][]string) (where []string) {
 				limit = len(valList)
 			}
 
-			where = append(where, fmt.Sprintf("%s IN (%s)", col, strings.Join(valList[start:limit], ", ")))
+			where[col] = append(where[col], fmt.Sprintf("%s IN (%s)", col, strings.Join(valList[start:limit], ", ")))
 		}
 	}
 
-	return
+	return where
 }

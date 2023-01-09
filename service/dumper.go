@@ -45,7 +45,9 @@ func (d *Dumper) Slice(collect *entity.Collect) error {
 		}
 
 		keys := collect.Tab(table.Name).Keys()
-		for _, where := range d.db.Where(keys) {
+
+		point := repository.NewPoint(d.db.Where(keys))
+		for _, where := range d.db.WhereSlice(point) {
 			if len(where) > 0 {
 				err := d.cli.ExecDump(fmt.Sprintf(
 					"--skip-triggers --no-create-info %s %s --where=\"%s\"",
