@@ -21,6 +21,7 @@ type Conf struct {
 	shell             string
 	defaultDateFormat string
 	Tmp               string
+	LimitCli          int
 }
 
 type File struct {
@@ -49,6 +50,7 @@ func NewConf(pathToFile, tmpFilename string) (*Conf, error) {
 		shell:             "/bin/sh",
 		defaultDateFormat: "2006-01-02_15_04",
 		Tmp:               tmpFilename,
+		LimitCli:          10,
 	}
 
 	yamlFile, err := ioutil.ReadFile(pathToFile)
@@ -64,7 +66,7 @@ func NewConf(pathToFile, tmpFilename string) (*Conf, error) {
 	return conf, nil
 }
 
-func (conf *Conf) GetDbUrl() string {
+func (conf *Conf) DbUrl() string {
 	return fmt.Sprintf("%s:%s@tcp(%s)/%s",
 		conf.User, conf.Password, conf.Host, conf.Database)
 }

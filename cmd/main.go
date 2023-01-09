@@ -26,7 +26,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db, err := repository.NewDb("mysql", conf.GetDbUrl(), conf.Database)
+	db, err := repository.NewDb(conf, "mysql")
 	if err != nil {
 		log.Fatal(err)
 	}

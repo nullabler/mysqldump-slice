@@ -1,3 +1,4 @@
-dump.sql
+*.gz
+*.sql
 vendor
 slice.yaml

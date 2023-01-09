@@ -10,16 +10,14 @@ import (
 )
 
 type App struct {
-	loader    *service.Loader
-	dumper    *service.Dumper
-	normalize *service.Normalize
+	loader *service.Loader
+	dumper *service.Dumper
 }
 
 func NewApp(conf *repository.Conf, db *repository.Db, cli *repository.Cli) *App {
 	return &App{
-		loader:    service.NewLoader(conf, db, cli),
-		dumper:    service.NewDumper(conf, cli, db),
-		normalize: service.NewNormalize(),
+		loader: service.NewLoader(conf, db, cli),
+		dumper: service.NewDumper(conf, cli, db),
 	}
 }
 
@@ -32,6 +30,12 @@ func (app *App) Run() {
 	if err := app.loader.Tables(collect); err != nil {
 		app.Panic(err)
 	}
+
+	if err := app.loader.Weight(collect); err != nil {
+		app.Panic(err)
+	}
+
+	service.CallNormalize(collect)
 
 	if err := app.loader.Dependences(collect); err != nil {
 		app.Panic(err)

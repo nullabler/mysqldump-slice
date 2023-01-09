@@ -10,17 +10,19 @@ import (
 type Db struct {
 	name string
 	con  *sql.DB
+	conf *Conf
 }
 
-func NewDb(driver, url, name string) (*Db, error) {
-	con, err := sql.Open(driver, url)
+func NewDb(conf *Conf, driver string) (*Db, error) {
+	con, err := sql.Open(driver, conf.DbUrl())
 	if err != nil {
 		return nil, err
 	}
 
 	return &Db{
-		name: name,
+		name: conf.Database,
 		con:  con,
+		conf: conf,
 	}, nil
 }
 
@@ -88,7 +90,7 @@ func (db *Db) LoadRelations(collect *entity.Collect) error {
 	return err
 }
 
-func (db *Db) LoadTables(conf *Conf, collect *entity.Collect) {
+func (db *Db) LoadTables(collect *entity.Collect) {
 	rows, err := db.con.Query(fmt.Sprintf(`SHOW FULL TABLES FROM %s`, db.name))
 	if err != nil {
 		return
@@ -100,7 +102,7 @@ func (db *Db) LoadTables(conf *Conf, collect *entity.Collect) {
 			return
 		}
 
-		if tabType != "BASE TABLE" || conf.Ignore(tabName) {
+		if tabType != "BASE TABLE" || db.conf.Ignore(tabName) {
 			continue
 		}
 
@@ -168,7 +170,10 @@ func (db *Db) LoadIds(tabName string, collect *entity.Collect, okSpecs bool, spe
 
 func (db *Db) LoadDeps(tabName string, collect *entity.Collect, rel entity.Relation, keys map[string][]string) {
 	rows, err := db.con.Query(fmt.Sprintf("SELECT %s FROM %s WHERE %s",
-		rel.Col(), tabName, db.Where(keys)))
+		rel.Col(),
+		tabName,
+		strings.Join(db.Where(keys), " AND "),
+	))
 
 	isIntDep, errIsInt := db.IsIntByCol(tabName, rel.Col())
 	if err != nil || errIsInt != nil {
@@ -180,11 +185,18 @@ func (db *Db) LoadDeps(tabName string, collect *entity.Collect, rel entity.Relat
 	}
 }
 
-func (db *Db) Where(keys map[string][]string) string {
-	var query []string
+func (db *Db) Where(keys map[string][]string) (where []string) {
 	for col, valList := range keys {
-		query = append(query, fmt.Sprintf("%s IN (%s)", col, strings.Join(valList, ", ")))
+		limit := 0
+		for start := 0; start < len(valList); start += db.conf.LimitCli {
+			limit += db.conf.LimitCli
+			if limit > len(valList) {
+				limit = len(valList)
+			}
+
+			where = append(where, fmt.Sprintf("%s IN (%s)", col, strings.Join(valList[start:limit], ", ")))
+		}
 	}
 
-	return strings.Join(query, " AND ")
+	return
 }

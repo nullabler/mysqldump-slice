@@ -6,7 +6,7 @@ import (
 )
 
 type Collect struct {
-	tables  []string
+	tables  TableList
 	relList map[string][]Relation
 	tabList map[string]*Tab
 }
@@ -19,10 +19,10 @@ func NewCollect() *Collect {
 }
 
 func (c *Collect) PushTable(tabName string) {
-	c.tables = append(c.tables, tabName)
+	c.tables = append(c.tables, NewTable(tabName))
 }
 
-func (c *Collect) Tables() []string {
+func (c *Collect) Tables() TableList {
 	return c.tables
 }
 

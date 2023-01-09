@@ -39,22 +39,23 @@ func (d *Dumper) Full() error {
 }
 
 func (d *Dumper) Slice(collect *entity.Collect) error {
-	for _, tabName := range collect.Tables() {
-		if d.hasTabNameLikeFullData(tabName) {
+	for _, table := range collect.Tables() {
+		if d.hasTabNameLikeFullData(table.Name) {
 			continue
 		}
 
-		keys := collect.Tab(tabName).Keys()
-		where := d.db.Where(keys)
-		if len(where) > 0 {
-			err := d.cli.ExecDump(fmt.Sprintf(
-				"--skip-triggers --no-create-info %s %s --where=\"%s\"",
-				d.conf.Database,
-				tabName,
-				where,
-			))
-			if err != nil {
-				return err
+		keys := collect.Tab(table.Name).Keys()
+		for _, where := range d.db.Where(keys) {
+			if len(where) > 0 {
+				err := d.cli.ExecDump(fmt.Sprintf(
+					"--skip-triggers --no-create-info %s %s --where=\"%s\"",
+					d.conf.Database,
+					table.Name,
+					where,
+				))
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
