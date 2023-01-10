@@ -2,4 +2,4 @@
 *.sql
 vendor
 slice.yaml
-build
+target
