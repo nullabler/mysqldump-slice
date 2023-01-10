@@ -18,7 +18,7 @@ func NewCli(conf *Conf) (*Cli, error) {
 
 func (c *Cli) ExecDump(call string) error {
 	return c.exec(fmt.Sprintf(
-		"mysqldump -u%s -p%s -h %s %s >> %s",
+		"mysqldump --single-transaction -u%s -p%s -h %s %s >> %s",
 		c.conf.User,
 		c.conf.Password,
 		c.conf.Host,
