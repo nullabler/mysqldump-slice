@@ -3,6 +3,7 @@ database: "test"
 user: "admin"
 password: "admin"
 filename:
+  path: "./build/"
   prefix: "short"
   gzip: Yes
   date-format: "2006-01-02_15:04:05"

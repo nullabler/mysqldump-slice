@@ -25,6 +25,7 @@ type Conf struct {
 }
 
 type File struct {
+	Path string `yaml:"path"` 
 	Prefix     string `yaml:"prefix"`
 	DateFormat string `yaml:"date-format"`
 	Gzip       bool   `yaml:"gzip"`
@@ -108,7 +109,8 @@ func (conf *Conf) Filename() string {
 	date := time.Now().Format(format)
 
 	return fmt.Sprintf(
-		"%s%s_%s.sql",
+		"%s%s%s_%s.sql",
+		conf.File.Path,
 		prefix,
 		date,
 		conf.Database,
