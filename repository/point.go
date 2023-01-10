@@ -45,7 +45,7 @@ func (p *Point) Next(n int) (string, int) {
 
 	for r, c := range p.row {
 		if r == line {
-			if n+1 < p.Count && line == p.rowLen - 1 {
+			if n+1 < p.Count && line == p.rowLen-1 {
 				p.up(line)
 			}
 
@@ -58,7 +58,7 @@ func (p *Point) Next(n int) (string, int) {
 func (p *Point) up(line int) {
 	if p.row[line] == p.length[line]-1 {
 		p.row[line] = 0
-		if line == p.rowLen - 1 {
+		if line == p.rowLen-1 {
 			p.up(0)
 		} else {
 			p.up(line + 1)

@@ -188,7 +188,7 @@ func (db *Db) LoadDeps(tabName string, collect *entity.Collect, rel entity.Relat
 func (db *Db) WhereAll(keys map[string][]string) string {
 	var whereList []string
 	for _, list := range db.Where(keys) {
-		whereList = append(whereList, "(" + strings.Join(list, ", ") + ")")
+		whereList = append(whereList, "("+strings.Join(list, ", ")+")")
 	}
 
 	return strings.Join(whereList, " AND ")
@@ -205,7 +205,7 @@ func (db *Db) WhereSlice(point *Point) []string {
 			where = append(where, strings.Join(query, " AND "))
 			query = []string{}
 		}
-		
+
 	}
 
 	return where
