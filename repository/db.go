@@ -130,12 +130,12 @@ func (db *Db) PrimaryKeys(tabName string) (keyList []string) {
 	return
 }
 
-func (db *Db) LoadIds(tabName string, collect *entity.Collect, okSpecs bool, specs Specs, prKeyList []string, confLimit int) {
+func (db *Db) LoadIds(tabName string, collect *entity.Collect, okSpecs bool, specs Specs, prKeyList []string, confLimit int) error {
 	var sort string
 	if okSpecs && len(specs.Sort) > 0 {
-		sort = strings.Join(specs.Sort, ", ")
+		sort = strings.Join(db.wrapKeys(specs.Sort, "`"), ", ")
 	} else {
-		sort = strings.Join(prKeyList, ", ")
+		sort = strings.Join(db.wrapKeys(prKeyList, "`"), ", ")
 	}
 
 	var condition, limit string
@@ -154,23 +154,29 @@ func (db *Db) LoadIds(tabName string, collect *entity.Collect, okSpecs bool, spe
 	}
 
 	for _, key := range prKeyList {
-		rows, err := db.con.Query(fmt.Sprintf("SELECT %s FROM %s %s ORDER BY %s DESC %s",
+		rows, err := db.con.Query(fmt.Sprintf("SELECT `%s` FROM %s %s ORDER BY %s DESC %s",
 			key, tabName, condition, sort, limit))
+		if err != nil {
+			return err
+		}
 
 		IsIntByCol, errIsIntByCol := db.IsIntByCol(tabName, key)
-		if err != nil || errIsIntByCol != nil {
-			return
+		if errIsIntByCol != nil {
+			return errIsIntByCol
 		}
 
 		for rows.Next() {
-			collect.PushKey(tabName, key, IsIntByCol, rows)
+			if err := collect.PushKey(tabName, key, IsIntByCol, rows); err != nil {
+				return err
+			}
 		}
 	}
 
+	return nil
 }
 
 func (db *Db) LoadDeps(tabName string, collect *entity.Collect, rel entity.Relation, keys map[string][]string) {
-	rows, err := db.con.Query(fmt.Sprintf("SELECT %s FROM %s WHERE %s",
+	rows, err := db.con.Query(fmt.Sprintf("SELECT `%s` FROM `%s` WHERE %s",
 		rel.Col(),
 		tabName,
 		db.WhereAll(keys),
@@ -222,9 +228,17 @@ func (db *Db) Where(keys map[string][]string) map[string][]string {
 				limit = len(valList)
 			}
 
-			where[col] = append(where[col], fmt.Sprintf("%s IN (%s)", col, strings.Join(valList[start:limit], ", ")))
+			where[col] = append(where[col], fmt.Sprintf("\\`%s\\` IN (%s)", col, strings.Join(valList[start:limit], ", ")))
 		}
 	}
 
 	return where
+}
+
+func (d *Db) wrapKeys(keys []string, wrapSym string) (list []string) {
+	for _, key := range keys {
+		list = append(list, wrapSym+key+wrapSym)
+	}
+
+	return
 }

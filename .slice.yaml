@@ -3,6 +3,7 @@ database: "test"
 user: "admin"
 password: "admin"
 max-connect: 10
+log: Yes
 filename:
   path: "./target/"
   prefix: "short"

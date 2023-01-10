@@ -15,6 +15,7 @@ type Conf struct {
 	Host       string `yaml:"host"`
 	Database   string `yaml:"database"`
 	MaxConnect int    `yaml:"max-connect"`
+	Log        bool   `yaml:"log"`
 	File       File   `yaml:"filename"`
 
 	Tables Tables `yaml:"tables"`

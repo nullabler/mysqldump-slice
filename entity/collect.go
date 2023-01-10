@@ -38,22 +38,23 @@ func (c *Collect) PushTab(tabName string) {
 	c.tabList[tabName] = NewTab(tabName)
 }
 
-func (c *Collect) PushKey(tab, col string, isInt bool, rows *sql.Rows) {
+func (c *Collect) PushKey(tab, col string, isInt bool, rows *sql.Rows) error {
 	var id int
 	var uid string
 	if isInt {
 		if err := rows.Scan(&id); err != nil {
-			return
+			return err
 		}
 		uid = fmt.Sprint(id)
 	} else {
 		if err := rows.Scan(&uid); err != nil {
-			return
+			return err
 		}
 		uid = fmt.Sprintf("'%s'", uid)
 	}
 
 	c.tabList[tab].Push(col, uid)
+	return nil
 }
 
 func (c *Collect) Tab(tab string) *Tab {

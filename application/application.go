@@ -1,7 +1,6 @@
 package application
 
 import (
-	"log"
 	"mysqldump-slice/entity"
 	"mysqldump-slice/repository"
 	"mysqldump-slice/service"
@@ -12,70 +11,70 @@ import (
 type App struct {
 	loader *service.Loader
 	dumper *service.Dumper
+	log    *service.Log
 }
 
 func NewApp(conf *repository.Conf, db *repository.Db, cli *repository.Cli) *App {
+	log := service.NewLog(conf)
+
 	return &App{
-		loader: service.NewLoader(conf, db, cli),
-		dumper: service.NewDumper(conf, cli, db),
+		loader: service.NewLoader(conf, db, cli, log),
+		dumper: service.NewDumper(conf, cli, db, log),
+		log:    log,
 	}
 }
 
 func (app *App) Run() {
 	collect := entity.NewCollect()
-	log.Println("Load relations......Start")
+	app.log.Info("Load relations......Start")
 	if err := app.loader.Relations(collect); err != nil {
-		app.Panic(err)
+		app.log.Error(err)
 	}
-	log.Println("Load relations......Done")
+	app.log.Info("Load relations......Done")
 
-	log.Println("Load tables......Start")
+	app.log.Info("Load tables......Start")
 	if err := app.loader.Tables(collect); err != nil {
-		app.Panic(err)
+		app.log.Error(err)
 	}
-	log.Println("Load tables......Done")
+	app.log.Info("Load tables......Done")
 
-	log.Println("Sort......Start")
+	app.log.Info("Sort......Start")
 	if err := app.loader.Weight(collect); err != nil {
-		app.Panic(err)
+		app.log.Error(err)
 	}
 
 	service.CallNormalize(collect)
-	log.Println("Sort......Done")
+	app.log.Info("Sort......Done")
 
-	log.Println("Load dependences......Start")
+	app.log.Info("Load dependences......Start")
 	if err := app.loader.Dependences(collect); err != nil {
-		app.Panic(err)
+		app.log.Error(err)
 	}
-	log.Println("Load dependences......Done")
+	app.log.Info("Load dependences......Done")
 
 	if err := app.dumper.RmFile(); err != nil {
-		app.Panic(err)
+		app.log.Error(err)
 	}
 
-	log.Println("Dump struct......Start")
+	app.log.Info("Dump struct......Start")
 	if err := app.dumper.Struct(); err != nil {
-		app.Panic(err)
+		app.log.Error(err)
 	}
-	log.Println("Dump struct......Done")
+	app.log.Info("Dump struct......Done")
 
-	log.Println("Dump data like full......Start")
+	app.log.Info("Dump data like full......Start")
 	if err := app.dumper.Full(); err != nil {
-		app.Panic(err)
+		app.log.Error(err)
 	}
-	log.Println("Dump data like full......Done")
+	app.log.Info("Dump data like full......Done")
 
-	log.Println("Dump data like short......Start")
+	app.log.Info("Dump data like short......Start")
 	if err := app.dumper.Slice(collect); err != nil {
-		app.Panic(err)
+		app.log.Error(err)
 	}
-	log.Println("Dump data like short......Done")
+	app.log.Info("Dump data like short......Done")
 
 	if err := app.dumper.Save(); err != nil {
-		app.Panic(err)
+		app.log.Error(err)
 	}
-}
-
-func (app *App) Panic(err error) {
-	panic(err.Error())
 }

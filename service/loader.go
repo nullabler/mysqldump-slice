@@ -9,13 +9,15 @@ type Loader struct {
 	conf *repository.Conf
 	db   *repository.Db
 	cli  *repository.Cli
+	log  *Log
 }
 
-func NewLoader(conf *repository.Conf, db *repository.Db, cli *repository.Cli) *Loader {
+func NewLoader(conf *repository.Conf, db *repository.Db, cli *repository.Cli, log *Log) *Loader {
 	return &Loader{
 		conf: conf,
 		db:   db,
 		cli:  cli,
+		log:  log,
 	}
 }
 
@@ -38,7 +40,11 @@ func (l *Loader) Tables(collect *entity.Collect) error {
 			prKeyList = specs.Pk
 		}
 
-		l.db.LoadIds(table.Name, collect, ok, specs, prKeyList, l.conf.Tables.Limit)
+		if err := l.db.LoadIds(table.Name, collect, ok, specs, prKeyList, l.conf.Tables.Limit); err != nil {
+			return err
+		}
+
+		l.log.Infof("- %s......Done", table.Name)
 	}
 	return nil
 }
