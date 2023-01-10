@@ -11,6 +11,11 @@ Run:
 target/slice ./.slice.yaml
 ```
 
+Run for development:
+```
+make watch
+```
+
 Example config yaml file:
 ```
 host: "localhost"
