@@ -1,10 +1,12 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"mysqldump-slice/entity"
 	"strings"
+	"time"
 )
 
 type Db struct {
@@ -19,6 +21,8 @@ func NewDb(conf *Conf, driver string) (*Db, error) {
 		return nil, err
 	}
 	con.SetMaxOpenConns(conf.MaxConnect)
+	con.SetMaxIdleConns(conf.MaxConnect)
+	con.SetConnMaxLifetime(time.Minute * 5)
 
 	return &Db{
 		name: conf.Database,
@@ -32,13 +36,16 @@ func (db *Db) Close() {
 }
 
 func (db *Db) IsIntByCol(tab, col string) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
 	var typeCol string
 	sql := `SELECT data_type  
 		FROM information_schema.columns 
 		WHERE table_schema = ? 
 		AND table_name = ? 
 		AND column_name = ?;`
-	if err := db.con.QueryRow(sql, db.name, tab, col).Scan(&typeCol); err != nil {
+	if err := db.con.QueryRowContext(ctx, sql, db.name, tab, col).Scan(&typeCol); err != nil {
 		return false, err
 	}
 
@@ -50,13 +57,19 @@ func (db *Db) IsIntByCol(tab, col string) (bool, error) {
 }
 
 func (db *Db) ColExist(tab, col string) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
 	sql := fmt.Sprintf(`SHOW columns FROM %s LIKE '%s'`, tab, col)
 	var a, b, c, d, f, g interface{}
-	_ = db.con.QueryRow(sql).Scan(&a, &b, &c, &d, &f, &g)
+	_ = db.con.QueryRowContext(ctx, sql).Scan(&a, &b, &c, &d, &f, &g)
 	return a != nil
 }
 
 func (db *Db) LoadRelations(collect *entity.Collect) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
 	sql := `select fks.table_name as foreign_table,
 			fks.referenced_table_name as primary_table,
 			kcu.column_name as fk_column,
@@ -74,7 +87,7 @@ func (db *Db) LoadRelations(collect *entity.Collect) error {
 			fks.constraint_name
 		ORDER BY fks.constraint_schema, fks.table_name`
 
-	rows, err := db.con.Query(sql, db.name)
+	rows, err := db.con.QueryContext(ctx, sql, db.name)
 	if err != nil {
 		return err
 	}
@@ -92,7 +105,10 @@ func (db *Db) LoadRelations(collect *entity.Collect) error {
 }
 
 func (db *Db) LoadTables(collect *entity.Collect) {
-	rows, err := db.con.Query(fmt.Sprintf(`SHOW FULL TABLES FROM %s`, db.name))
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := db.con.QueryContext(ctx, fmt.Sprintf(`SHOW FULL TABLES FROM %s`, db.name))
 	if err != nil {
 		return
 	}
@@ -112,7 +128,10 @@ func (db *Db) LoadTables(collect *entity.Collect) {
 }
 
 func (db *Db) PrimaryKeys(tabName string) (keyList []string) {
-	rows, err := db.con.Query(fmt.Sprintf(`SHOW KEYS FROM %s WHERE Key_name = 'PRIMARY'`, tabName))
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	rows, err := db.con.QueryContext(ctx, fmt.Sprintf(`SHOW KEYS FROM %s WHERE Key_name = 'PRIMARY'`, tabName))
 	if err != nil {
 		return
 	}
@@ -131,6 +150,9 @@ func (db *Db) PrimaryKeys(tabName string) (keyList []string) {
 }
 
 func (db *Db) LoadIds(tabName string, collect *entity.Collect, okSpecs bool, specs Specs, prKeyList []string, confLimit int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
 	var sort string
 	if okSpecs && len(specs.Sort) > 0 {
 		sort = strings.Join(db.wrapKeys(specs.Sort, "`"), ", ")
@@ -154,7 +176,7 @@ func (db *Db) LoadIds(tabName string, collect *entity.Collect, okSpecs bool, spe
 	}
 
 	for _, key := range prKeyList {
-		rows, err := db.con.Query(fmt.Sprintf("SELECT `%s` FROM %s %s ORDER BY %s DESC %s",
+		rows, err := db.con.QueryContext(ctx, fmt.Sprintf("SELECT `%s` FROM %s %s ORDER BY %s DESC %s",
 			key, tabName, condition, sort, limit))
 		if err != nil {
 			return err
@@ -176,7 +198,10 @@ func (db *Db) LoadIds(tabName string, collect *entity.Collect, okSpecs bool, spe
 }
 
 func (db *Db) LoadDeps(tabName string, collect *entity.Collect, rel entity.Relation, keys map[string][]string) {
-	rows, err := db.con.Query(fmt.Sprintf("SELECT `%s` FROM `%s` WHERE %s",
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	rows, err := db.con.QueryContext(ctx, fmt.Sprintf("SELECT `%s` FROM `%s` WHERE %s",
 		rel.Col(),
 		tabName,
 		db.WhereAll(keys),
