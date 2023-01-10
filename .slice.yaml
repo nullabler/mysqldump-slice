@@ -2,6 +2,7 @@ host: "localhost"
 database: "test"
 user: "admin"
 password: "admin"
+max-connect: 10
 filename:
   path: "./target/"
   prefix: "short"

@@ -18,6 +18,7 @@ func NewDb(conf *Conf, driver string) (*Db, error) {
 	if err != nil {
 		return nil, err
 	}
+	con.SetMaxOpenConns(conf.MaxConnect)
 
 	return &Db{
 		name: conf.Database,

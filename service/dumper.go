@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"log"
 	"mysqldump-slice/entity"
 	"mysqldump-slice/repository"
 	"strings"
@@ -60,6 +61,7 @@ func (d *Dumper) Slice(collect *entity.Collect) error {
 				}
 			}
 		}
+		log.Printf("- %s......Done", table.Name)
 	}
 
 	return nil

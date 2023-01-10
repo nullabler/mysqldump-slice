@@ -10,11 +10,12 @@ import (
 )
 
 type Conf struct {
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
-	Host     string `yaml:"host"`
-	Database string `yaml:"database"`
-	File     File   `yaml:"filename"`
+	User       string `yaml:"user"`
+	Password   string `yaml:"password"`
+	Host       string `yaml:"host"`
+	Database   string `yaml:"database"`
+	MaxConnect int    `yaml:"max-connect"`
+	File       File   `yaml:"filename"`
 
 	Tables Tables `yaml:"tables"`
 
@@ -25,7 +26,7 @@ type Conf struct {
 }
 
 type File struct {
-	Path string `yaml:"path"` 
+	Path       string `yaml:"path"`
 	Prefix     string `yaml:"prefix"`
 	DateFormat string `yaml:"date-format"`
 	Gzip       bool   `yaml:"gzip"`
