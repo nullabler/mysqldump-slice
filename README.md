@@ -93,7 +93,7 @@ tables:
 
 
 ### For development:
-- Create config **slice.yaml**
+- Create configs **conf.yaml** and **db.cnf**
 - Change network name for block docker-compose.yaml
 - Run
 ```
