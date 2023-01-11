@@ -18,10 +18,8 @@ func NewCli(conf *Conf) (*Cli, error) {
 
 func (c *Cli) ExecDump(call string) error {
 	return c.exec(fmt.Sprintf(
-		"mysqldump --single-transaction -u%s -p%s -h %s %s >> %s",
-		c.conf.User,
-		c.conf.Password,
-		c.conf.Host,
+		"mysqldump %s --single-transaction %s >> %s",
+		c.auth(),
 		call,
 		c.conf.Tmp,
 	))
@@ -52,4 +50,16 @@ func (c *Cli) exec(call string) error {
 	}
 
 	return nil
+}
+
+func (c *Cli) auth() string {
+	if len(c.conf.DefaultExtraFile) > 0 {
+		return fmt.Sprintf("--defaults-extra-file=%s", c.conf.DefaultExtraFile)
+	}
+
+	return fmt.Sprintf("-u%s -p%s -h %s",
+		c.conf.User,
+		c.conf.Password,
+		c.conf.Host,
+	)
 }

@@ -2,6 +2,8 @@ host: "localhost"
 database: "test"
 user: "admin"
 password: "admin"
+default-extra-file: "./.db.cnf"
+
 max-connect: 10
 max-lifetime-connect-minute: 5
 max-lifetime-query-second: 3

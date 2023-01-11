@@ -9,14 +9,16 @@ import (
 )
 
 type Conf struct {
-	User                     string `yaml:"user"`
-	Password                 string `yaml:"password"`
-	Host                     string `yaml:"host"`
-	Database                 string `yaml:"database"`
-	MaxConnectCount          int    `yaml:"max-connect"`
-	MaxLifetimeConnectMinute int    `yaml:"max-lifetime-connect-minute"`
-	MaxLifetimeQuerySecond   int    `yaml:"max-lifetime-query-second"`
-	Log                      bool   `yaml:"log"`
+	User             string `yaml:"user"`
+	Password         string `yaml:"password"`
+	Host             string `yaml:"host"`
+	Database         string `yaml:"database"`
+	DefaultExtraFile string `yaml:"default-extra-file"`
+
+	MaxConnectCount          int  `yaml:"max-connect"`
+	MaxLifetimeConnectMinute int  `yaml:"max-lifetime-connect-minute"`
+	MaxLifetimeQuerySecond   int  `yaml:"max-lifetime-query-second"`
+	Log                      bool `yaml:"log"`
 
 	File   File   `yaml:"filename"`
 	Tables Tables `yaml:"tables"`
