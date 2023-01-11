@@ -1,6 +1,6 @@
 *.gz
 *.sql
 vendor
-slice.yaml
+conf.yaml
 db.cnf
 target

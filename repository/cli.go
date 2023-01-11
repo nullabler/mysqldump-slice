@@ -29,13 +29,15 @@ func (c *Cli) RmFile() error {
 	return c.exec(fmt.Sprintf("rm -f %s 2> /dev/null", c.conf.Filename()))
 }
 
-func (c *Cli) Save(filename string) error {
+func (c *Cli) Save() (string, error) {
+	filename := c.conf.Filename()
 	action := "cp %s %s"
 	if c.conf.File.Gzip {
-		action = "cat %s | gzip > %s.gz"
+		filename += ".gz"
+		action = "cat %s | gzip > %s"
 	}
 
-	return c.exec(fmt.Sprintf(
+	return filename, c.exec(fmt.Sprintf(
 		action,
 		c.conf.Tmp,
 		filename,

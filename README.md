@@ -6,51 +6,91 @@ It's wrap for mysqldump, gzip and /bin/sh. Mysqldump-slice allows to make short 
 go buld -o target/slice cmd/main.go
 ```
 
-### Run:
+### Change config:
+- Create config for slice and change params:
 ```
-target/slice ./.slice.yaml
+cp .conf.yaml conf.yaml
+```
+- Create config for mysqldump and change params:
+```
+cp .db.cnf db.cnf
 ```
 
-### Example config yaml file:
+### Run:
+```
+target/slice ./conf.yaml
+```
+
+
+### Description config yaml file:
+- Mysql connect for load pk/fk
 ```
 host: "localhost"
 database: "test"
 user: "admin"
 password: "admin"
+```
+- Path to config for mysqldump
+```
+default-extra-file: "./db.cnf"
+```
+- Params for connect mysql
+```
 max-connect: 10
 max-lifetime-connect-minute: 5
 max-lifetime-query-second: 3
+```
+- Flag for show logs
+```
 log: Yes
-
+```
+- Options for setting to save dump file
+```
 filename:
   path: "./target/"
   prefix: "short"
   gzip: Yes
   date-format: "2006-01-02_15:04:05"
-
+```
+- Global limit for each tables
+```
 tables:
   limit: 100
+```
+- Table list for full data dump
+```
   full:
     - migration_versions
+```
+- Table list for ignore data dump
+```
   ignore:
     - test 
+```
+- Special setting for some table
+```
   specs:
     - name: user
+```
+- If column is not specified like FK
+```
       pk:
         - uuid
+```
+- Column list for sorting
+```
       sort:
         - updated_at
+```
+- Private limit
+```
       limit: 5
+```
+- Special conditions for to select short data
+```
       condition: "updated_at > NOW() - INTERVAL 1 WEEK"
 ```
 
-### Example config yaml file without default values:
-```
-host: "localhost"
-database: "test"
-user: "admin"
-password: "admin"
-```
 
 ### For development:
 - Create config **slice.yaml**

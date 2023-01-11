@@ -69,7 +69,5 @@ func (d *Dumper) Slice(collect *entity.Collect) error {
 }
 
 func (d *Dumper) Save() (string, error) {
-	filename := d.conf.Filename()
-
-	return filename, d.cli.Save(filename)
+	return d.cli.Save()
 }
