@@ -14,9 +14,9 @@ type Conf struct {
 	Password                 string `yaml:"password"`
 	Host                     string `yaml:"host"`
 	Database                 string `yaml:"database"`
-	maxConnectCount          int    `yaml:"max-connect"`
-	maxLifetimeConnectMinute int    `yaml:"max-lifetime-connect-minute"`
-	maxLifetimeQuerySecond   int    `yaml:"max-lifetime-query-second"`
+	MaxConnectCount          int    `yaml:"max-connect"`
+	MaxLifetimeConnectMinute int    `yaml:"max-lifetime-connect-minute"`
+	MaxLifetimeQuerySecond   int    `yaml:"max-lifetime-query-second"`
 	Log                      bool   `yaml:"log"`
 
 	File   File   `yaml:"filename"`
@@ -133,24 +133,24 @@ func (conf *Conf) Filename() string {
 }
 
 func (conf *Conf) MaxConnect() int {
-	if conf.maxConnectCount > 0 {
-		return conf.maxConnectCount
+	if conf.MaxConnectCount > 0 {
+		return conf.MaxConnectCount
 	}
 
 	return conf.def.maxConnectCount
 }
 
 func (conf *Conf) MaxLifetimeConnect() int {
-	if conf.maxLifetimeConnectMinute > 0 {
-		return conf.maxLifetimeConnectMinute
+	if conf.MaxLifetimeConnectMinute > 0 {
+		return conf.MaxLifetimeConnectMinute
 	}
 
 	return conf.def.maxLifetimeConnectMinute
 }
 
 func (conf *Conf) MaxLifetimeQuery() int {
-	if conf.maxLifetimeQuerySecond > 0 {
-		return conf.maxLifetimeQuerySecond
+	if conf.MaxLifetimeQuerySecond > 0 {
+		return conf.MaxLifetimeQuerySecond
 	}
 
 	return conf.def.maxLifetimeQuerySecond
