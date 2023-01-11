@@ -3,7 +3,10 @@ database: "test"
 user: "admin"
 password: "admin"
 max-connect: 10
+max-lifetime-connect-minute: 5
+max-lifetime-query-second: 3
 log: Yes
+
 filename:
   path: "./target/"
   prefix: "short"

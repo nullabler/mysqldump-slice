@@ -16,6 +16,10 @@ func NewLog(conf *repository.Conf) *Log {
 	}
 }
 
+func (l *Log) Printf(format string, params ...any) {
+	log.Printf(format, params...)
+}
+
 func (l *Log) Info(msgs ...string) {
 	if l.conf.Log {
 		log.Println(msgs)

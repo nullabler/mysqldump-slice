@@ -20,9 +20,9 @@ func NewDb(conf *Conf, driver string) (*Db, error) {
 	if err != nil {
 		return nil, err
 	}
-	con.SetMaxOpenConns(conf.MaxConnect)
-	con.SetMaxIdleConns(conf.MaxConnect)
-	con.SetConnMaxLifetime(time.Minute * 5)
+	con.SetMaxOpenConns(conf.MaxConnect())
+	con.SetMaxIdleConns(conf.MaxConnect())
+	con.SetConnMaxLifetime(time.Minute * time.Duration(conf.MaxLifetimeConnect()))
 
 	return &Db{
 		name: conf.Database,
@@ -36,7 +36,7 @@ func (db *Db) Close() {
 }
 
 func (db *Db) IsIntByCol(tab, col string) (bool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
 	var typeCol string
@@ -57,7 +57,7 @@ func (db *Db) IsIntByCol(tab, col string) (bool, error) {
 }
 
 func (db *Db) ColExist(tab, col string) bool {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
 	sql := fmt.Sprintf(`SHOW columns FROM %s LIKE '%s'`, tab, col)
@@ -67,7 +67,7 @@ func (db *Db) ColExist(tab, col string) bool {
 }
 
 func (db *Db) LoadRelations(collect *entity.Collect) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
 	sql := `select fks.table_name as foreign_table,
@@ -105,7 +105,7 @@ func (db *Db) LoadRelations(collect *entity.Collect) error {
 }
 
 func (db *Db) LoadTables(collect *entity.Collect) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
 	rows, err := db.con.QueryContext(ctx, fmt.Sprintf(`SHOW FULL TABLES FROM %s`, db.name))
@@ -119,7 +119,7 @@ func (db *Db) LoadTables(collect *entity.Collect) {
 			return
 		}
 
-		if tabType != "BASE TABLE" || db.conf.Ignore(tabName) {
+		if tabType != "BASE TABLE" || db.conf.IsIgnore(tabName) {
 			continue
 		}
 
@@ -128,7 +128,7 @@ func (db *Db) LoadTables(collect *entity.Collect) {
 }
 
 func (db *Db) PrimaryKeys(tabName string) (keyList []string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
 	rows, err := db.con.QueryContext(ctx, fmt.Sprintf(`SHOW KEYS FROM %s WHERE Key_name = 'PRIMARY'`, tabName))
@@ -150,7 +150,7 @@ func (db *Db) PrimaryKeys(tabName string) (keyList []string) {
 }
 
 func (db *Db) LoadIds(tabName string, collect *entity.Collect, okSpecs bool, specs Specs, prKeyList []string, confLimit int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
 	var sort string
@@ -198,7 +198,7 @@ func (db *Db) LoadIds(tabName string, collect *entity.Collect, okSpecs bool, spe
 }
 
 func (db *Db) LoadDeps(tabName string, collect *entity.Collect, rel entity.Relation, keys map[string][]string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
 	rows, err := db.con.QueryContext(ctx, fmt.Sprintf("SELECT `%s` FROM `%s` WHERE %s",

@@ -74,7 +74,9 @@ func (app *App) Run() {
 	}
 	app.log.Info("Dump data like short......Done")
 
-	if err := app.dumper.Save(); err != nil {
+	filename, err := app.dumper.Save()
+	if err != nil {
 		app.log.Error(err)
 	}
+	app.log.Printf("Save dump: %s......Done", filename)
 }

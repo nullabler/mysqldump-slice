@@ -42,7 +42,7 @@ func (d *Dumper) Full() error {
 
 func (d *Dumper) Slice(collect *entity.Collect) error {
 	for _, table := range collect.Tables() {
-		if d.hasTabNameLikeFullData(table.Name) {
+		if d.conf.IsFull(table.Name) || d.conf.IsIgnore(table.Name) {
 			continue
 		}
 
@@ -68,15 +68,8 @@ func (d *Dumper) Slice(collect *entity.Collect) error {
 	return nil
 }
 
-func (d *Dumper) Save() error {
-	return d.cli.Save()
-}
+func (d *Dumper) Save() (string, error) {
+	filename := d.conf.Filename()
 
-func (d *Dumper) hasTabNameLikeFullData(val string) (ok bool) {
-	for i := range d.conf.Tables.Full {
-		if ok = d.conf.Tables.Full[i] == val; ok {
-			return
-		}
-	}
-	return
+	return filename, d.cli.Save(filename)
 }

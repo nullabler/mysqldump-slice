@@ -10,20 +10,30 @@ import (
 )
 
 type Conf struct {
-	User       string `yaml:"user"`
-	Password   string `yaml:"password"`
-	Host       string `yaml:"host"`
-	Database   string `yaml:"database"`
-	MaxConnect int    `yaml:"max-connect"`
-	Log        bool   `yaml:"log"`
-	File       File   `yaml:"filename"`
+	User                     string `yaml:"user"`
+	Password                 string `yaml:"password"`
+	Host                     string `yaml:"host"`
+	Database                 string `yaml:"database"`
+	maxConnectCount          int    `yaml:"max-connect"`
+	maxLifetimeConnectMinute int    `yaml:"max-lifetime-connect-minute"`
+	maxLifetimeQuerySecond   int    `yaml:"max-lifetime-query-second"`
+	Log                      bool   `yaml:"log"`
 
+	File   File   `yaml:"filename"`
 	Tables Tables `yaml:"tables"`
 
-	shell             string
-	defaultDateFormat string
-	Tmp               string
-	LimitCli          int
+	shell string
+	def   Default
+
+	Tmp      string
+	LimitCli int
+}
+
+type Default struct {
+	dateFormat               string
+	maxConnectCount          int
+	maxLifetimeConnectMinute int
+	maxLifetimeQuerySecond   int
 }
 
 type File struct {
@@ -50,10 +60,14 @@ type Specs struct {
 
 func NewConf(pathToFile, tmpFilename string) (*Conf, error) {
 	conf := &Conf{
-		shell:             "/bin/sh",
-		defaultDateFormat: "2006-01-02_15_04",
-		Tmp:               tmpFilename,
-		LimitCli:          10,
+		shell:    "/bin/sh",
+		Tmp:      tmpFilename,
+		LimitCli: 10,
+		def: Default{
+			dateFormat:               "2006-01-02_15_04",
+			maxLifetimeConnectMinute: 5,
+			maxLifetimeQuerySecond:   3,
+		},
 	}
 
 	yamlFile, err := ioutil.ReadFile(pathToFile)
@@ -88,14 +102,12 @@ func (conf *Conf) Specs(tabName string) (Specs, bool) {
 	return Specs{}, false
 }
 
-func (conf *Conf) Ignore(tabName string) bool {
-	for _, ignore := range conf.Tables.Ignore {
-		if ignore == tabName {
-			return true
-		}
-	}
+func (conf *Conf) IsIgnore(tabName string) bool {
+	return conf.hasTable(tabName, conf.Tables.Ignore)
+}
 
-	return false
+func (conf *Conf) IsFull(tabName string) bool {
+	return conf.hasTable(tabName, conf.Tables.Full)
 }
 
 func (conf *Conf) Filename() string {
@@ -104,7 +116,7 @@ func (conf *Conf) Filename() string {
 		prefix = conf.File.Prefix + "_"
 	}
 
-	format := conf.defaultDateFormat
+	format := conf.def.dateFormat
 	if len(conf.File.DateFormat) > 0 {
 		format = conf.File.DateFormat
 	}
@@ -117,4 +129,38 @@ func (conf *Conf) Filename() string {
 		date,
 		conf.Database,
 	)
+}
+
+func (conf *Conf) MaxConnect() int {
+	if conf.maxConnectCount > 0 {
+		return conf.maxConnectCount
+	}
+
+	return conf.def.maxConnectCount
+}
+
+func (conf *Conf) MaxLifetimeConnect() int {
+	if conf.maxLifetimeConnectMinute > 0 {
+		return conf.maxLifetimeConnectMinute
+	}
+
+	return conf.def.maxLifetimeConnectMinute
+}
+
+func (conf *Conf) MaxLifetimeQuery() int {
+	if conf.maxLifetimeQuerySecond > 0 {
+		return conf.maxLifetimeQuerySecond
+	}
+
+	return conf.def.maxLifetimeQuerySecond
+}
+
+func (conf *Conf) hasTable(tabName string, tabList []string) bool {
+	for _, tab := range tabList {
+		if tab == tabName {
+			return true
+		}
+	}
+
+	return false
 }

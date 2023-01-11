@@ -8,8 +8,6 @@ import (
 )
 
 func main() {
-	log.Println("Start dump")
-
 	if len(os.Args) < 2 {
 		log.Fatal("Not found yaml file")
 	}
@@ -40,6 +38,4 @@ func main() {
 	app := application.NewApp(conf, db, cli)
 
 	app.Run()
-
-	log.Println("Finish dump")
 }

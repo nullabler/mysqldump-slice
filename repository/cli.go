@@ -31,7 +31,7 @@ func (c *Cli) RmFile() error {
 	return c.exec(fmt.Sprintf("rm -f %s 2> /dev/null", c.conf.Filename()))
 }
 
-func (c *Cli) Save() error {
+func (c *Cli) Save(filename string) error {
 	action := "cp %s %s"
 	if c.conf.File.Gzip {
 		action = "cat %s | gzip > %s.gz"
@@ -40,7 +40,7 @@ func (c *Cli) Save() error {
 	return c.exec(fmt.Sprintf(
 		action,
 		c.conf.Tmp,
-		c.conf.Filename(),
+		filename,
 	))
 }
 
