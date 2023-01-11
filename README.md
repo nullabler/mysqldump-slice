@@ -1,17 +1,17 @@
 # mysqldump-slice
 It's wrap for mysqldump, gzip and /bin/sh. Mysqldump-slice allows to make short dump DB with consistency data.
 
-####Build:
+#### Build:
 ```
 go buld -o target/slice cmd/main.go
 ```
 
-####Run:
+#### Run:
 ```
 target/slice ./.slice.yaml
 ```
 
-####Example config yaml file:
+#### Example config yaml file:
 ```
 host: "localhost"
 database: "test"
@@ -44,7 +44,7 @@ tables:
       condition: "updated_at > NOW() - INTERVAL 1 WEEK"
 ```
 
-###Example config yaml file without default values:
+### Example config yaml file without default values:
 ```
 host: "localhost"
 database: "test"
@@ -52,7 +52,7 @@ user: "admin"
 password: "admin"
 ```
 
-####For development:
+#### For development:
 - Create config **slice.yaml**
 - Change network name for block docker-compose.yaml
 - Run
