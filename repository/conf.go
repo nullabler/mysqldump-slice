@@ -65,6 +65,7 @@ func NewConf(pathToFile, tmpFilename string) (*Conf, error) {
 		LimitCli: 10,
 		def: Default{
 			dateFormat:               "2006-01-02_15_04",
+			maxConnectCount:          10,
 			maxLifetimeConnectMinute: 5,
 			maxLifetimeQuerySecond:   3,
 		},
