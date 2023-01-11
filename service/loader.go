@@ -22,13 +22,19 @@ func NewLoader(conf *repository.Conf, db *repository.Db, cli *repository.Cli, lo
 }
 
 func (l *Loader) Relations(collect *entity.Collect) error {
-	l.db.LoadTables(collect)
+	if err := l.db.LoadTables(collect); err != nil {
+		return err
+	}
+
 	return l.db.LoadRelations(collect)
 }
 
 func (l *Loader) Tables(collect *entity.Collect) error {
 	for _, table := range collect.Tables() {
-		prKeyList := l.db.PrimaryKeys(table.Name)
+		prKeyList, err := l.db.PrimaryKeys(table.Name)
+		if err != nil {
+			return err
+		}
 
 		collect.PushTab(table.Name)
 
@@ -71,7 +77,9 @@ func (l *Loader) Dependences(collect *entity.Collect) error {
 				continue
 			}
 
-			l.db.LoadDeps(table.Name, collect, rel, keys)
+			if err := l.db.LoadDeps(table.Name, collect, rel, keys); err != nil {
+				return err
+			}
 		}
 
 	}

@@ -3,7 +3,6 @@ package repository
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 	"time"
 
 	"gopkg.in/yaml.v3"
@@ -79,7 +78,6 @@ func NewConf(pathToFile, tmpFilename string) (*Conf, error) {
 	if err := yaml.Unmarshal(yamlFile, conf); err != nil {
 		return nil, err
 	}
-	defer os.Remove(conf.Tmp)
 
 	return conf, nil
 }

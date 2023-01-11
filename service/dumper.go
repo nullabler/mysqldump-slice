@@ -42,7 +42,7 @@ func (d *Dumper) Full() error {
 
 func (d *Dumper) Slice(collect *entity.Collect) error {
 	for _, table := range collect.Tables() {
-		if d.conf.IsFull(table.Name) || d.conf.IsIgnore(table.Name) {
+		if d.conf.IsFull(table.Name) {
 			continue
 		}
 

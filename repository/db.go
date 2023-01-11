@@ -104,19 +104,19 @@ func (db *Db) LoadRelations(collect *entity.Collect) error {
 	return err
 }
 
-func (db *Db) LoadTables(collect *entity.Collect) {
+func (db *Db) LoadTables(collect *entity.Collect) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
-	rows, err := db.con.QueryContext(ctx, fmt.Sprintf(`SHOW FULL TABLES FROM %s`, db.name))
+	rows, err := db.con.QueryContext(ctx, fmt.Sprintf("SHOW FULL TABLES FROM `%s`", db.name))
 	if err != nil {
-		return
+		return err
 	}
 
 	for rows.Next() {
 		var tabName, tabType string
 		if err = rows.Scan(&tabName, &tabType); err != nil {
-			return
+			return err
 		}
 
 		if tabType != "BASE TABLE" || db.conf.IsIgnore(tabName) {
@@ -125,28 +125,34 @@ func (db *Db) LoadTables(collect *entity.Collect) {
 
 		collect.PushTable(tabName)
 	}
+
+	return nil
 }
 
-func (db *Db) PrimaryKeys(tabName string) (keyList []string) {
+func (db *Db) PrimaryKeys(tabName string) ([]string, error) {
+	var keyList []string
+
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
-	rows, err := db.con.QueryContext(ctx, fmt.Sprintf(`SHOW KEYS FROM %s WHERE Key_name = 'PRIMARY'`, tabName))
+	rows, err := db.con.QueryContext(ctx, fmt.Sprintf("SHOW KEYS FROM `%s` WHERE Key_name = 'PRIMARY'", tabName))
 	if err != nil {
-		return
+		return keyList, err
 	}
 
 	for rows.Next() {
 		var t *string
 		var key string
-		if err = rows.Scan(&t, &t, &t, &t, &key, &t, &t, &t, &t, &t, &t, &t, &t, &t); err != nil {
-			return
+		if err := rows.Scan(&t, &t, &t, &t, &key, &t, &t, &t, &t, &t, &t, &t, &t, &t); err != nil {
+			if errTwo := rows.Scan(&t, &t, &t, &t, &key, &t, &t, &t, &t, &t, &t, &t, &t); errTwo != nil {
+				return keyList, errTwo
+			}
 		}
 
 		keyList = append(keyList, key)
 	}
 
-	return
+	return keyList, nil
 }
 
 func (db *Db) LoadIds(tabName string, collect *entity.Collect, okSpecs bool, specs Specs, prKeyList []string, confLimit int) error {
@@ -176,7 +182,7 @@ func (db *Db) LoadIds(tabName string, collect *entity.Collect, okSpecs bool, spe
 	}
 
 	for _, key := range prKeyList {
-		rows, err := db.con.QueryContext(ctx, fmt.Sprintf("SELECT `%s` FROM %s %s ORDER BY %s DESC %s",
+		rows, err := db.con.QueryContext(ctx, fmt.Sprintf("SELECT `%s` FROM `%s` %s ORDER BY %s DESC %s",
 			key, tabName, condition, sort, limit))
 		if err != nil {
 			return err
@@ -197,33 +203,45 @@ func (db *Db) LoadIds(tabName string, collect *entity.Collect, okSpecs bool, spe
 	return nil
 }
 
-func (db *Db) LoadDeps(tabName string, collect *entity.Collect, rel entity.Relation, keys map[string][]string) {
+func (db *Db) LoadDeps(tabName string, collect *entity.Collect, rel entity.Relation, keys map[string][]string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
+
+	where, ok := db.WhereAll(keys)
+	if !ok {
+		return nil
+	}
 
 	rows, err := db.con.QueryContext(ctx, fmt.Sprintf("SELECT `%s` FROM `%s` WHERE %s",
 		rel.Col(),
 		tabName,
-		db.WhereAll(keys),
+		where,
 	))
+	if err != nil {
+		return err
+	}
 
 	isIntDep, errIsInt := db.IsIntByCol(tabName, rel.Col())
-	if err != nil || errIsInt != nil {
-		return
+	if errIsInt != nil {
+		return errIsInt
 	}
 
 	for rows.Next() {
-		collect.PushKey(rel.RefTab(), rel.RefCol(), isIntDep, rows)
+		if err := collect.PushKey(rel.RefTab(), rel.RefCol(), isIntDep, rows); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
-func (db *Db) WhereAll(keys map[string][]string) string {
+func (db *Db) WhereAll(keys map[string][]string) (string, bool) {
 	var whereList []string
 	for _, list := range db.Where(keys) {
 		whereList = append(whereList, "("+strings.Join(list, ", ")+")")
 	}
 
-	return strings.Join(whereList, " AND ")
+	return strings.Join(whereList, " AND "), len(whereList) > 0
 }
 
 func (db *Db) WhereSlice(point *Point) []string {
