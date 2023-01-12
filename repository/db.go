@@ -56,21 +56,11 @@ func (db *Db) IsIntByCol(tab, col string) (bool, error) {
 	return false, nil
 }
 
-func (db *Db) ColExist(tab, col string) bool {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
-	defer cancel()
-
-	sql := fmt.Sprintf(`SHOW columns FROM %s LIKE '%s'`, tab, col)
-	var a, b, c, d, f, g interface{}
-	_ = db.con.QueryRowContext(ctx, sql).Scan(&a, &b, &c, &d, &f, &g)
-	return a != nil
-}
-
 func (db *Db) LoadRelations(collect *entity.Collect) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
-	sql := `select fks.table_name as foreign_table,
+	sql := `SELECT fks.table_name as foreign_table,
 			fks.referenced_table_name as primary_table,
 			kcu.column_name as fk_column,
 			kcu.referenced_column_name as ref_column
@@ -135,18 +125,22 @@ func (db *Db) PrimaryKeys(tabName string) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
-	rows, err := db.con.QueryContext(ctx, fmt.Sprintf("SHOW KEYS FROM `%s` WHERE Key_name = 'PRIMARY'", tabName))
+	rows, err := db.con.QueryContext(ctx,
+		`SELECT COLUMN_NAME 
+		FROM information_schema.KEY_COLUMN_USAGE 
+		WHERE TABLE_NAME = ? 
+		AND CONSTRAINT_NAME = ?`,
+		tabName,
+		"PRIMARY",
+	)
 	if err != nil {
 		return keyList, err
 	}
 
 	for rows.Next() {
-		var t *string
 		var key string
-		if err := rows.Scan(&t, &t, &t, &t, &key, &t, &t, &t, &t, &t, &t, &t, &t, &t); err != nil {
-			if errTwo := rows.Scan(&t, &t, &t, &t, &key, &t, &t, &t, &t, &t, &t, &t, &t); errTwo != nil {
-				return keyList, errTwo
-			}
+		if err := rows.Scan(&key); err != nil {
+			return keyList, err
 		}
 
 		keyList = append(keyList, key)
