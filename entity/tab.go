@@ -1,5 +1,10 @@
 package entity
 
+type TabInterface interface {
+	Push(string, string)
+	Keys() map[string][]string
+}
+
 type Tab struct {
 	name string
 	keys map[string][]string

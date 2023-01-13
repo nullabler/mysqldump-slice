@@ -11,10 +11,10 @@ import (
 type App struct {
 	loader *service.Loader
 	dumper *service.Dumper
-	log    *service.Log
+	log    service.LogInterface
 }
 
-func NewApp(conf *repository.Conf, db *repository.Db, cli *repository.Cli) *App {
+func NewApp(conf *repository.Conf, db repository.DbInterface, cli repository.CliInterface) *App {
 	log := service.NewLog(conf)
 
 	return &App{

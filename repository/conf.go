@@ -84,6 +84,10 @@ func NewConf(pathToFile, tmpFilename string) (*Conf, error) {
 	return conf, nil
 }
 
+func (conf *Conf) DbName() string {
+	return conf.Database
+}
+
 func (conf *Conf) DbUrl() string {
 	return fmt.Sprintf("%s:%s@tcp(%s)/%s",
 		conf.User, conf.Password, conf.Host, conf.Database)

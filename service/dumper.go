@@ -9,12 +9,12 @@ import (
 
 type Dumper struct {
 	conf *repository.Conf
-	cli  *repository.Cli
-	db   *repository.Db
-	log  *Log
+	cli  repository.CliInterface
+	db   repository.DbInterface
+	log  LogInterface
 }
 
-func NewDumper(conf *repository.Conf, cli *repository.Cli, db *repository.Db, log *Log) *Dumper {
+func NewDumper(conf *repository.Conf, cli repository.CliInterface, db repository.DbInterface, log LogInterface) *Dumper {
 	return &Dumper{
 		conf: conf,
 		cli:  cli,
@@ -28,19 +28,19 @@ func (d *Dumper) RmFile() error {
 }
 
 func (d *Dumper) Struct() error {
-	return d.cli.ExecDump(fmt.Sprintf("--no-data --routines %s", d.conf.Database))
+	return d.cli.ExecDump(fmt.Sprintf("--no-data --routines %s", d.conf.DbName()))
 }
 
 func (d *Dumper) Full() error {
 	return d.cli.ExecDump(fmt.Sprintf(
 		"--skip-triggers --no-create-info %s %s",
-		d.conf.Database,
+		d.conf.DbName(),
 		strings.Join(d.conf.Tables.Full, " "),
 	))
 
 }
 
-func (d *Dumper) Slice(collect *entity.Collect) error {
+func (d *Dumper) Slice(collect entity.CollectInterface) error {
 	for _, table := range collect.Tables() {
 		if d.conf.IsFull(table.Name) {
 			continue

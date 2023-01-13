@@ -6,6 +6,14 @@ import (
 	"mysqldump-slice/repository"
 )
 
+type LogInterface interface {
+	Printf(string, ...any)
+	Info(...string)
+	Infof(string, ...any)
+	Error(error)
+	Dump(...interface{})
+}
+
 type Log struct {
 	conf *repository.Conf
 }

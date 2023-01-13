@@ -7,12 +7,12 @@ import (
 
 type Loader struct {
 	conf *repository.Conf
-	db   *repository.Db
-	cli  *repository.Cli
-	log  *Log
+	db   repository.DbInterface
+	cli  repository.CliInterface
+	log  LogInterface
 }
 
-func NewLoader(conf *repository.Conf, db *repository.Db, cli *repository.Cli, log *Log) *Loader {
+func NewLoader(conf *repository.Conf, db repository.DbInterface, cli repository.CliInterface, log LogInterface) *Loader {
 	return &Loader{
 		conf: conf,
 		db:   db,
@@ -21,7 +21,7 @@ func NewLoader(conf *repository.Conf, db *repository.Db, cli *repository.Cli, lo
 	}
 }
 
-func (l *Loader) Relations(collect *entity.Collect) error {
+func (l *Loader) Relations(collect entity.CollectInterface) error {
 	if err := l.db.LoadTables(collect); err != nil {
 		return err
 	}
@@ -29,7 +29,7 @@ func (l *Loader) Relations(collect *entity.Collect) error {
 	return l.db.LoadRelations(collect)
 }
 
-func (l *Loader) Tables(collect *entity.Collect) error {
+func (l *Loader) Tables(collect entity.CollectInterface) error {
 	for _, table := range collect.Tables() {
 		prKeyList, err := l.db.PrimaryKeys(table.Name)
 		if err != nil {
@@ -55,7 +55,7 @@ func (l *Loader) Tables(collect *entity.Collect) error {
 	return nil
 }
 
-func (l *Loader) Weight(collect *entity.Collect) error {
+func (l *Loader) Weight(collect entity.CollectInterface) error {
 	for _, table := range collect.Tables() {
 		for _, rel := range collect.RelList(table.Name) {
 			for _, refTab := range collect.Tables() {
@@ -69,7 +69,7 @@ func (l *Loader) Weight(collect *entity.Collect) error {
 	return nil
 }
 
-func (l *Loader) Dependences(collect *entity.Collect) error {
+func (l *Loader) Dependences(collect entity.CollectInterface) error {
 	for _, table := range collect.Tables() {
 		for _, rel := range collect.RelList(table.Name) {
 			keys := collect.Tab(table.Name).Keys()

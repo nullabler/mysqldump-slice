@@ -5,16 +5,26 @@ import (
 	"fmt"
 )
 
+type CollectInterface interface {
+	PushTable(string)
+	Tables() TableList
+	PushRelation(RelationInterface)
+	RelList(string) []RelationInterface
+	PushTab(string)
+	PushKey(string, string, bool, *sql.Rows) error
+	Tab(string) TabInterface
+}
+
 type Collect struct {
 	tables  TableList
-	relList map[string][]Relation
-	tabList map[string]*Tab
+	relList map[string][]RelationInterface
+	tabList map[string]TabInterface
 }
 
 func NewCollect() *Collect {
 	return &Collect{
-		relList: make(map[string][]Relation),
-		tabList: make(map[string]*Tab),
+		relList: make(map[string][]RelationInterface),
+		tabList: make(map[string]TabInterface),
 	}
 }
 
@@ -26,11 +36,11 @@ func (c *Collect) Tables() TableList {
 	return c.tables
 }
 
-func (c *Collect) PushRelation(rel Relation) {
+func (c *Collect) PushRelation(rel RelationInterface) {
 	c.relList[rel.Tab()] = append(c.relList[rel.Tab()], rel)
 }
 
-func (c *Collect) RelList(tabName string) []Relation {
+func (c *Collect) RelList(tabName string) []RelationInterface {
 	return c.relList[tabName]
 }
 
@@ -68,6 +78,6 @@ func (c *Collect) PushKey(tab, col string, isInt bool, rows *sql.Rows) error {
 	return nil
 }
 
-func (c *Collect) Tab(tab string) *Tab {
+func (c *Collect) Tab(tab string) TabInterface {
 	return c.tabList[tab]
 }

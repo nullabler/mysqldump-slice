@@ -1,33 +1,40 @@
 package repository
 
+type PointInterface interface {
+	Next(int) (string, int)
+	Key(string, int) string
+	Count() int
+	Current() int
+}
+
 type Point struct {
 	row     []int
 	length  []int
-	Count   int
+	count   int
 	rowLen  int
 	match   map[string]int
-	Current int
+	current int
 
-	Keys map[string][]string
+	keys map[string][]string
 }
 
 func NewPoint(keys map[string][]string) *Point {
 	p := &Point{
 		match: make(map[string]int),
-		Keys:  keys,
+		keys:  keys,
 	}
 
 	n := 0
-	for col, list := range p.Keys {
+	for col, list := range p.keys {
 		p.match[col] = n
 		p.row = append(p.row, 0)
 
 		length := len(list)
 		p.length = append(p.length, length)
-		if p.Count == 0 {
-			p.Count = length
+		if p.count == 0 {
+			p.count = length
 		} else {
-			p.Count += length
+			p.count += length
 		}
 		n++
 	}
@@ -37,15 +44,15 @@ func NewPoint(keys map[string][]string) *Point {
 }
 
 func (p *Point) Next(n int) (string, int) {
-	line := p.Current
-	p.Current++
-	if p.Current >= p.rowLen {
-		p.Current = 0
+	line := p.current
+	p.current++
+	if p.current >= p.rowLen {
+		p.current = 0
 	}
 
 	for r, c := range p.row {
 		if r == line {
-			if n+1 < p.Count && line == p.rowLen-1 {
+			if n+1 < p.count && line == p.rowLen-1 {
 				p.up(line)
 			}
 
@@ -53,6 +60,18 @@ func (p *Point) Next(n int) (string, int) {
 		}
 	}
 	return "", 0
+}
+
+func (p *Point) Key(k string, i int) string {
+	return p.keys[k][i]
+}
+
+func (p *Point) Count() int {
+	return p.count
+}
+
+func (p *Point) Current() int {
+	return p.current
 }
 
 func (p *Point) up(line int) {

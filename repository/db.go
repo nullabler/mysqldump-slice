@@ -9,6 +9,18 @@ import (
 	"time"
 )
 
+type DbInterface interface {
+	Close()
+	IsIntByCol(string, string) (bool, error)
+	LoadRelations(entity.CollectInterface) error
+	LoadTables(entity.CollectInterface) error
+	PrimaryKeys(string) ([]string, error)
+	LoadIds(string, entity.CollectInterface, bool, Specs, []string, int) error
+	LoadDeps(string, entity.CollectInterface, entity.RelationInterface, map[string][]string) error
+	WhereSlice(PointInterface) []string
+	Where(map[string][]string, bool) map[string][]string
+}
+
 type Db struct {
 	name string
 	con  *sql.DB
@@ -56,7 +68,7 @@ func (db *Db) IsIntByCol(tab, col string) (bool, error) {
 	return false, nil
 }
 
-func (db *Db) LoadRelations(collect *entity.Collect) error {
+func (db *Db) LoadRelations(collect entity.CollectInterface) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
@@ -83,7 +95,7 @@ func (db *Db) LoadRelations(collect *entity.Collect) error {
 	}
 
 	for rows.Next() {
-		rel := entity.Relation{}
+		rel := entity.NewRelation()
 		if err := rel.Parse(rows); err != nil {
 			return err
 		}
@@ -94,7 +106,7 @@ func (db *Db) LoadRelations(collect *entity.Collect) error {
 	return err
 }
 
-func (db *Db) LoadTables(collect *entity.Collect) error {
+func (db *Db) LoadTables(collect entity.CollectInterface) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
@@ -149,7 +161,7 @@ func (db *Db) PrimaryKeys(tabName string) ([]string, error) {
 	return keyList, nil
 }
 
-func (db *Db) LoadIds(tabName string, collect *entity.Collect, okSpecs bool, specs Specs, prKeyList []string, confLimit int) error {
+func (db *Db) LoadIds(tabName string, collect entity.CollectInterface, okSpecs bool, specs Specs, prKeyList []string, confLimit int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
@@ -197,7 +209,7 @@ func (db *Db) LoadIds(tabName string, collect *entity.Collect, okSpecs bool, spe
 	return nil
 }
 
-func (db *Db) LoadDeps(tabName string, collect *entity.Collect, rel entity.Relation, keys map[string][]string) error {
+func (db *Db) LoadDeps(tabName string, collect entity.CollectInterface, rel entity.RelationInterface, keys map[string][]string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
@@ -229,14 +241,14 @@ func (db *Db) LoadDeps(tabName string, collect *entity.Collect, rel entity.Relat
 	return nil
 }
 
-func (db *Db) WhereSlice(point *Point) []string {
+func (db *Db) WhereSlice(point PointInterface) []string {
 	var where []string
 	var query []string
-	for n := 0; n < point.Count; n++ {
+	for n := 0; n < point.Count(); n++ {
 		col, i := point.Next(n)
-		query = append(query, point.Keys[col][i])
+		query = append(query, point.Key(col, i))
 
-		if point.Current == 0 {
+		if point.Current() == 0 {
 			where = append(where, strings.Join(query, " AND "))
 			query = []string{}
 		}

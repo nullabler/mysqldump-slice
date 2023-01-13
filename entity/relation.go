@@ -2,11 +2,23 @@ package entity
 
 import "database/sql"
 
+type RelationInterface interface {
+	Parse(*sql.Rows) error
+	Tab() string
+	Col() string
+	RefTab() string
+	RefCol() string
+}
+
 type Relation struct {
 	table     string
 	column    string
 	refTable  string
 	refColumn string
+}
+
+func NewRelation() *Relation {
+	return &Relation{}
 }
 
 func (rel *Relation) Parse(rows *sql.Rows) (err error) {

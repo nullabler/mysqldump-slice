@@ -9,7 +9,7 @@ type Normalize struct {
 	entity.TableList
 }
 
-func CallNormalize(collect *entity.Collect) {
+func CallNormalize(collect entity.CollectInterface) {
 	sort.Sort(Normalize{collect.Tables()})
 }
 

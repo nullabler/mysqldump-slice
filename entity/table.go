@@ -1,5 +1,9 @@
 package entity
 
+type TableInterface interface {
+	Up()
+}
+
 type Table struct {
 	Name   string
 	Weight int

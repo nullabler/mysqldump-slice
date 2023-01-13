@@ -6,6 +6,12 @@ import (
 	"os/exec"
 )
 
+type CliInterface interface {
+	ExecDump(string) error
+	RmFile() error
+	Save() (string, error)
+}
+
 type Cli struct {
 	conf *Conf
 }
