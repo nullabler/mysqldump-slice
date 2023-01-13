@@ -73,7 +73,7 @@ func (l *Loader) Dependences(collect *entity.Collect) error {
 	for _, table := range collect.Tables() {
 		for _, rel := range collect.RelList(table.Name) {
 			keys := collect.Tab(table.Name).Keys()
-			if len(keys) > 0 {
+			if len(keys) == 0 {
 				continue
 			}
 

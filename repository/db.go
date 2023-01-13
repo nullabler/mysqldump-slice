@@ -201,7 +201,7 @@ func (db *Db) LoadDeps(tabName string, collect *entity.Collect, rel entity.Relat
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
-	where, ok := db.WhereAll(keys)
+	where, ok := db.whereAll(keys)
 	if !ok {
 		return nil
 	}
@@ -229,15 +229,6 @@ func (db *Db) LoadDeps(tabName string, collect *entity.Collect, rel entity.Relat
 	return nil
 }
 
-func (db *Db) WhereAll(keys map[string][]string) (string, bool) {
-	var whereList []string
-	for _, list := range db.Where(keys) {
-		whereList = append(whereList, "("+strings.Join(list, ", ")+")")
-	}
-
-	return strings.Join(whereList, " AND "), len(whereList) > 0
-}
-
 func (db *Db) WhereSlice(point *Point) []string {
 	var where []string
 	var query []string
@@ -255,21 +246,37 @@ func (db *Db) WhereSlice(point *Point) []string {
 	return where
 }
 
-func (db *Db) Where(keys map[string][]string) map[string][]string {
+func (db *Db) Where(keys map[string][]string, isEscape bool) map[string][]string {
 	where := make(map[string][]string)
 	for col, valList := range keys {
 		limit := 0
+
+		if isEscape {
+			col = fmt.Sprintf("\\`%s\\`", col)
+		} else {
+			col = fmt.Sprintf("`%s`", col)
+		}
+
 		for start := 0; start < len(valList); start += db.conf.LimitCli {
 			limit += db.conf.LimitCli
 			if limit > len(valList) {
 				limit = len(valList)
 			}
 
-			where[col] = append(where[col], fmt.Sprintf("\\`%s\\` IN (%s)", col, strings.Join(valList[start:limit], ", ")))
+			where[col] = append(where[col], fmt.Sprintf("%s IN (%s)", col, strings.Join(valList[start:limit], ", ")))
 		}
 	}
 
 	return where
+}
+
+func (db *Db) whereAll(keys map[string][]string) (string, bool) {
+	var whereList []string
+	for _, list := range db.Where(keys, false) {
+		whereList = append(whereList, "("+strings.Join(list, " OR ")+")")
+	}
+
+	return strings.Join(whereList, " AND "), len(whereList) > 0
 }
 
 func (d *Db) wrapKeys(keys []string, wrapSym string) (list []string) {
