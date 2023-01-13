@@ -3,7 +3,7 @@ It's wrap for mysqldump, gzip and /bin/sh. Mysqldump-slice allows to make short 
 
 ### Build:
 ```
-go buld -o target/slice cmd/main.go
+go buld -o target/slice cmd/slice.go
 ```
 
 ### Change config:
