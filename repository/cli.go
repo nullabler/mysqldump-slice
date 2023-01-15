@@ -1,9 +1,9 @@
 package repository
 
 import (
+	"errors"
 	"fmt"
-	"os"
-	"os/exec"
+	"mysqldump-slice/addapter"
 )
 
 type CliInterface interface {
@@ -14,25 +14,36 @@ type CliInterface interface {
 
 type Cli struct {
 	conf *Conf
+	exec addapter.ExecInterface 
 }
 
-func NewCli(conf *Conf) (*Cli, error) {
+func NewCli(conf *Conf, exec addapter.ExecInterface) (*Cli, error) {
 	return &Cli{
 		conf: conf,
+		exec: exec,
 	}, nil
 }
 
 func (c *Cli) ExecDump(call string) error {
-	return c.exec(fmt.Sprintf(
+	if len(c.conf.Tmp) == 0 {
+		return errors.New("not found tmp file")
+	}
+
+	auth, err := c.auth()
+	if err != nil {
+		return err
+	}
+
+	return c.exec.Command(fmt.Sprintf(
 		"mysqldump %s --single-transaction %s >> %s",
-		c.auth(),
+		auth,
 		call,
 		c.conf.Tmp,
 	))
 }
 
 func (c *Cli) RmFile() error {
-	return c.exec(fmt.Sprintf("rm -f %s 2> /dev/null", c.conf.Filename()))
+	return c.exec.Command(fmt.Sprintf("rm -f %s 2> /dev/null", c.conf.Filename()))
 }
 
 func (c *Cli) Save() (string, error) {
@@ -43,31 +54,25 @@ func (c *Cli) Save() (string, error) {
 		action = "cat %s | gzip > %s"
 	}
 
-	return filename, c.exec(fmt.Sprintf(
+	return filename, c.exec.Command(fmt.Sprintf(
 		action,
 		c.conf.Tmp,
 		filename,
 	))
 }
 
-func (c *Cli) exec(call string) error {
-	cmd := exec.Command(c.conf.Shell(), "-c", call)
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return err
+func (c *Cli) auth() (string, error) {
+	if len(c.conf.DefaultExtraFile) > 0 {
+		return fmt.Sprintf("--defaults-extra-file=%s", c.conf.DefaultExtraFile), nil
 	}
 
-	return nil
-}
-
-func (c *Cli) auth() string {
-	if len(c.conf.DefaultExtraFile) > 0 {
-		return fmt.Sprintf("--defaults-extra-file=%s", c.conf.DefaultExtraFile)
+	if len(c.conf.User) == 0 || len(c.conf.Host) == 0 {
+		return "", errors.New("fail auth")
 	}
 
 	return fmt.Sprintf("-u%s -p%s -h %s",
 		c.conf.User,
 		c.conf.Password,
 		c.conf.Host,
-	)
+	), nil
 }

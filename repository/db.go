@@ -25,6 +25,8 @@ type Db struct {
 	name string
 	con  *sql.DB
 	conf *Conf
+
+	isClose bool
 }
 
 func NewDb(conf *Conf, driver string) (*Db, error) {
@@ -40,10 +42,17 @@ func NewDb(conf *Conf, driver string) (*Db, error) {
 		name: conf.Database,
 		con:  con,
 		conf: conf,
+
+		isClose: false,
 	}, nil
 }
 
 func (db *Db) Close() {
+	if db.isClose {
+		return
+	}
+
+	db.isClose = true
 	db.con.Close()
 }
 

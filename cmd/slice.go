@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"mysqldump-slice/addapter"
 	"mysqldump-slice/application"
 	"mysqldump-slice/repository"
 	"os"
@@ -30,7 +31,7 @@ func main() {
 	}
 	defer db.Close()
 
-	cli, err := repository.NewCli(conf)
+	cli, err := repository.NewCli(conf, addapter.NewExec(conf.Shell()))
 	if err != nil {
 		log.Fatal(err)
 	}

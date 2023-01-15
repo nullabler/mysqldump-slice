@@ -127,12 +127,18 @@ func (conf *Conf) Filename() string {
 	}
 	date := time.Now().Format(format)
 
+	tail := ""
+	if conf.File.Gzip {
+		tail += ".gz"
+	}
+
 	return fmt.Sprintf(
-		"%s%s%s_%s.sql",
+		"%s%s%s_%s.sql%s",
 		conf.File.Path,
 		prefix,
 		date,
 		conf.Database,
+		tail,
 	)
 }
 
