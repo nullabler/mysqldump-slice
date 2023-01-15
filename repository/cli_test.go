@@ -58,6 +58,30 @@ func TestExecDump(t *testing.T) {
 
 }
 
+func TestSave(t *testing.T) {
+	exec := addapter.NewExecMock()
+
+	conf := &Conf{}
+	runSave(t, conf, exec, "", "tmp file is empty")
+
+	conf.Tmp = "/tmp/1234"
+	runSave(t, conf, exec, "cp /tmp/1234 _.sql", "")
+
+	conf = &Conf{
+		Database: "test",
+		Tmp: "/tmp/1234",
+		File: File{
+			Path: "./build/",
+			Prefix: "short",
+			DateFormat: "2006-01-02",
+			Gzip: true,
+		},
+	}
+
+	date := time.Now().Format(conf.File.DateFormat)
+	runSave(t, conf, exec, "cat /tmp/1234 | gzip > ./build/short_"+date+"_test.sql.gz", "")
+}
+
 func newCliMock(t *testing.T, conf *Conf, exec addapter.ExecInterface) *Cli {
 	cli, err := NewCli(conf, exec)
 	if err != nil {
@@ -65,6 +89,27 @@ func newCliMock(t *testing.T, conf *Conf, exec addapter.ExecInterface) *Cli {
 	}
 
 	return cli
+}
+
+func runSave(t *testing.T, conf *Conf, exec *addapter.ExecMock, want, wantErr string) {
+	cli := newCliMock(t, conf, exec)
+
+	filename, err := cli.Save()
+	if err != nil {
+		if err.Error() == wantErr {
+			return
+		}
+		t.Errorf("This not expect err: %s", err.Error())
+	}
+
+	if filename != conf.Filename() {
+		t.Errorf("Filename not equel got: %s, wanted: %s", filename, conf.Filename())
+	}
+
+	got := exec.Call()
+	if got != want {
+		t.Errorf("Got: %q, wanted: %q", got, want)
+	}
 }
 
 func runExecDump(t *testing.T, conf *Conf, exec *addapter.ExecMock, call, want string) {

@@ -48,9 +48,16 @@ func (c *Cli) RmFile() error {
 
 func (c *Cli) Save() (string, error) {
 	filename := c.conf.Filename()
+	if len(filename) == 0 {
+		return "", errors.New("filename is empty")
+	}
+	
+	if len(c.conf.Tmp) == 0 {
+		return "", errors.New("tmp file is empty")
+	}
+
 	action := "cp %s %s"
 	if c.conf.File.Gzip {
-		filename += ".gz"
 		action = "cat %s | gzip > %s"
 	}
 
