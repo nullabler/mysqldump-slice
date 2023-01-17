@@ -46,7 +46,12 @@ func (l *Loader) Tables(collect entity.CollectInterface) error {
 			prKeyList = specs.Pk
 		}
 
-		if err := l.db.LoadIds(table.Name, collect, ok, specs, prKeyList, l.conf.Tables.Limit); err != nil {
+		limit := l.conf.Tables.Limit
+		if l.conf.IsFull(table.Name) {
+			limit = 0
+		}
+
+		if err := l.db.LoadIds(table.Name, collect, ok, specs, prKeyList, limit); err != nil {
 			return err
 		}
 

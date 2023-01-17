@@ -189,7 +189,7 @@ func (db *Db) LoadIds(tabName string, collect entity.CollectInterface, okSpecs b
 		}
 	}
 
-	if len(condition) == 0 {
+	if len(condition) == 0 && confLimit > 0 {
 		limit = fmt.Sprintf("LIMIT %d", confLimit)
 		if okSpecs && specs.Limit > 0 {
 			limit = fmt.Sprintf("LIMIT %d", specs.Limit)

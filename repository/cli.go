@@ -14,7 +14,7 @@ type CliInterface interface {
 
 type Cli struct {
 	conf *Conf
-	exec addapter.ExecInterface 
+	exec addapter.ExecInterface
 }
 
 func NewCli(conf *Conf, exec addapter.ExecInterface) (*Cli, error) {
@@ -51,9 +51,9 @@ func (c *Cli) Save() (string, error) {
 	if len(filename) == 0 {
 		return "", errors.New("filename is empty")
 	}
-	
+
 	if len(c.conf.Tmp) == 0 {
-		return "", errors.New("tmp file is empty")
+		return "", errors.New("not found tmp file")
 	}
 
 	action := "cp %s %s"

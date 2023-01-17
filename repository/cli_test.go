@@ -19,16 +19,16 @@ func TestRmFile_filename(t *testing.T) {
 	conf := &Conf{
 		Database: "test",
 		File: File{
-			Path: "./build/",
-			Prefix: "short",
+			Path:       "./build/",
+			Prefix:     "short",
 			DateFormat: "2006-01-02",
-			Gzip: true,
+			Gzip:       true,
 		},
 	}
 
 	date := time.Now().Format(conf.File.DateFormat)
 
-	want := fmt.Sprintf("rm -f %s%s_%s_%s.sql.gz 2> /dev/null", 
+	want := fmt.Sprintf("rm -f %s%s_%s_%s.sql.gz 2> /dev/null",
 		conf.File.Path,
 		conf.File.Prefix,
 		date,
@@ -47,7 +47,6 @@ func TestExecDump(t *testing.T) {
 	conf.Tmp = "/tmp/1234"
 	runExecDump_err(t, conf, exec, "", "fail auth")
 
-
 	conf.User = "root"
 	conf.Password = "1234"
 	conf.Host = "db_test"
@@ -62,19 +61,19 @@ func TestSave(t *testing.T) {
 	exec := addapter.NewExecMock()
 
 	conf := &Conf{}
-	runSave(t, conf, exec, "", "tmp file is empty")
+	runSave(t, conf, exec, "", "not found tmp file")
 
 	conf.Tmp = "/tmp/1234"
 	runSave(t, conf, exec, "cp /tmp/1234 _.sql", "")
 
 	conf = &Conf{
 		Database: "test",
-		Tmp: "/tmp/1234",
+		Tmp:      "/tmp/1234",
 		File: File{
-			Path: "./build/",
-			Prefix: "short",
+			Path:       "./build/",
+			Prefix:     "short",
 			DateFormat: "2006-01-02",
-			Gzip: true,
+			Gzip:       true,
 		},
 	}
 
