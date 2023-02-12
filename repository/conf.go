@@ -54,9 +54,16 @@ type Tables struct {
 type Specs struct {
 	Name      string   `yaml:"name"`
 	Pk        []string `yaml:"pk"`
+	Fk        []Fk     `yaml:"fk"`
 	Sort      []string `yaml:"sort"`
 	Limit     int      `yaml:"limit"`
 	Condition string   `yaml:"condition"`
+}
+
+type Fk struct {
+	Col   string `yaml:"col"`
+	FkTab string `yaml:"fk_tab"`
+	FkCol string `yaml:"fk_col"`
 }
 
 func NewConf(pathToFile, tmpFilename string) (*Conf, error) {

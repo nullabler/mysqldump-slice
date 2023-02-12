@@ -25,6 +25,10 @@ tables:
     - name: user
       pk:
         - uuid
+      fk:
+        - col: category_id
+          fk_tab: category
+          fk_col: id
       sort:
         - updated_at
       limit: 5

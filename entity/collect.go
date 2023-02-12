@@ -1,30 +1,30 @@
 package entity
 
-import (
-	"database/sql"
-	"fmt"
-)
-
 type CollectInterface interface {
 	PushTable(string)
 	Tables() TableList
 	PushRelation(RelationInterface)
 	RelList(string) []RelationInterface
 	PushTab(string)
-	PushKey(string, string, bool, *sql.Rows) error
+	PushKeyList(string, string, []string)
 	Tab(string) TabInterface
+	PushPkList(string, []string)
+	PkList(string) []string
+	IsPk(string, string) bool
 }
 
 type Collect struct {
 	tables  TableList
 	relList map[string][]RelationInterface
 	tabList map[string]TabInterface
+	pkList  map[string][]string
 }
 
 func NewCollect() *Collect {
 	return &Collect{
 		relList: make(map[string][]RelationInterface),
 		tabList: make(map[string]TabInterface),
+		pkList:  make(map[string][]string),
 	}
 }
 
@@ -48,36 +48,31 @@ func (c *Collect) PushTab(tabName string) {
 	c.tabList[tabName] = NewTab(tabName)
 }
 
-func (c *Collect) PushKey(tab, col string, isInt bool, rows *sql.Rows) error {
-	var id *int
-	var uid *string
-	var key string
-
-	if isInt {
-		if err := rows.Scan(&id); err != nil {
-			return err
-		}
-
-		if id != nil {
-			key = fmt.Sprint(*id)
-		}
-	} else {
-		if err := rows.Scan(&uid); err != nil {
-			return err
-		}
-
-		if uid != nil {
-			key = fmt.Sprintf("'%s'", *uid)
-		}
-	}
-
-	if len(key) > 0 {
+func (c *Collect) PushKeyList(tab, col string, list []string) {
+	for _, key := range list {
+		//fmt.Println(c.tabList[tab], tab, col, key)
 		c.tabList[tab].Push(col, key)
 	}
-
-	return nil
 }
 
 func (c *Collect) Tab(tab string) TabInterface {
 	return c.tabList[tab]
+}
+
+func (c *Collect) PushPkList(tabName string, pkList []string) {
+	c.pkList[tabName] = pkList
+}
+
+func (c *Collect) PkList(tabName string) []string {
+	return c.pkList[tabName]
+}
+
+func (c *Collect) IsPk(tabName, tabCol string) bool {
+	for _, pk := range c.PkList(tabName) {
+		if pk == tabCol {
+			return true
+		}
+	}
+
+	return false
 }

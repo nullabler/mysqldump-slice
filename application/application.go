@@ -32,12 +32,6 @@ func (app *App) Run() {
 	}
 	app.log.Info("Load relations......Done")
 
-	app.log.Info("Load tables......Start")
-	if err := app.loader.Tables(collect); err != nil {
-		app.log.Error(err)
-	}
-	app.log.Info("Load tables......Done")
-
 	app.log.Info("Sort......Start")
 	if err := app.loader.Weight(collect); err != nil {
 		app.log.Error(err)
@@ -46,11 +40,11 @@ func (app *App) Run() {
 	service.CallNormalize(collect)
 	app.log.Info("Sort......Done")
 
-	app.log.Info("Load dependences......Start")
-	if err := app.loader.Dependences(collect); err != nil {
+	app.log.Info("Load tables......Start")
+	if err := app.loader.Tables(collect); err != nil {
 		app.log.Error(err)
 	}
-	app.log.Info("Load dependences......Done")
+	app.log.Info("Load tables......Done")
 
 	if err := app.dumper.RmFile(); err != nil {
 		app.log.Error(err)
@@ -68,11 +62,40 @@ func (app *App) Run() {
 	}
 	app.log.Info("Dump data like full......Done")
 
-	app.log.Info("Dump data like short......Start")
-	if err := app.dumper.Slice(collect); err != nil {
-		app.log.Error(err)
+	app.log.Info("Load dependences and dump data like short......Start")
+	isLoop := true
+	for {
+		if isLoop {
+			isLoop = false
+		} else {
+			break
+		}
+
+		for _, table := range collect.Tables() {
+			keys := collect.Tab(table.Name).Pull()
+			if len(keys) == 0 {
+				continue
+			} else {
+				isLoop = true
+			}
+
+			where, ok := app.loader.WhereAllByKeys(keys)
+			if !ok {
+				continue
+			}
+
+			for _, rel := range collect.RelList(table.Name) {
+				if err := app.loader.Dependences(collect, rel, table.Name, where); err != nil {
+					app.log.Error(err)
+				}
+			}
+
+			if err := app.dumper.Slice(collect, table.Name, keys); err != nil {
+				app.log.Error(err)
+			}
+		}
 	}
-	app.log.Info("Dump data like short......Done")
+	app.log.Info("Load dependences and dump data like short......Done")
 
 	filename, err := app.dumper.Save()
 	if err != nil {

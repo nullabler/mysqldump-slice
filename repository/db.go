@@ -15,10 +15,12 @@ type DbInterface interface {
 	LoadRelations(entity.CollectInterface) error
 	LoadTables(entity.CollectInterface) error
 	PrimaryKeys(string) ([]string, error)
-	LoadIds(string, entity.CollectInterface, bool, Specs, []string, int) error
-	LoadDeps(string, entity.CollectInterface, entity.RelationInterface, map[string][]string) error
+	LoadIds(string, bool, Specs, []string, int) (map[string][]string, error)
+	LoadDeps(string, string, entity.RelationInterface) ([]string, error)
+	LoadPkByCol(string, string, []string, []string) (map[string][]string, error)
 	WhereSlice(PointInterface) []string
 	Where(map[string][]string, bool) map[string][]string
+	WhereAll(map[string][]string) (string, bool)
 }
 
 type Db struct {
@@ -170,7 +172,7 @@ func (db *Db) PrimaryKeys(tabName string) ([]string, error) {
 	return keyList, nil
 }
 
-func (db *Db) LoadIds(tabName string, collect entity.CollectInterface, okSpecs bool, specs Specs, prKeyList []string, confLimit int) error {
+func (db *Db) LoadIds(tabName string, okSpecs bool, specs Specs, prKeyList []string, confLimit int) (map[string][]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
@@ -196,36 +198,37 @@ func (db *Db) LoadIds(tabName string, collect entity.CollectInterface, okSpecs b
 		}
 	}
 
+	list := make(map[string][]string)
 	for _, key := range prKeyList {
 		rows, err := db.con.QueryContext(ctx, fmt.Sprintf("SELECT `%s` FROM `%s` %s ORDER BY %s DESC %s",
 			key, tabName, condition, sort, limit))
 		if err != nil {
-			return err
+			return list, err
 		}
 
-		IsIntByCol, errIsIntByCol := db.IsIntByCol(tabName, key)
-		if errIsIntByCol != nil {
-			return errIsIntByCol
+		IsIntByCol, err := db.IsIntByCol(tabName, key)
+		if err != nil {
+			return list, err
 		}
 
 		for rows.Next() {
-			if err := collect.PushKey(tabName, key, IsIntByCol, rows); err != nil {
-				return err
+			val, err := db.toString(rows, IsIntByCol)
+			if err != nil {
+				return list, err
+			}
+
+			if len(val) > 0 {
+				list[key] = append(list[key], val)
 			}
 		}
 	}
 
-	return nil
+	return list, nil
 }
 
-func (db *Db) LoadDeps(tabName string, collect entity.CollectInterface, rel entity.RelationInterface, keys map[string][]string) error {
+func (db *Db) LoadDeps(tabName, where string, rel entity.RelationInterface) (list []string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
-
-	where, ok := db.whereAll(keys)
-	if !ok {
-		return nil
-	}
 
 	rows, err := db.con.QueryContext(ctx, fmt.Sprintf("SELECT `%s` FROM `%s` WHERE %s",
 		rel.Col(),
@@ -233,21 +236,58 @@ func (db *Db) LoadDeps(tabName string, collect entity.CollectInterface, rel enti
 		where,
 	))
 	if err != nil {
-		return err
+		return
 	}
 
-	isIntDep, errIsInt := db.IsIntByCol(tabName, rel.Col())
-	if errIsInt != nil {
-		return errIsInt
+	isIntDep, err := db.IsIntByCol(tabName, rel.Col())
+	if err != nil {
+		return
 	}
 
 	for rows.Next() {
-		if err := collect.PushKey(rel.RefTab(), rel.RefCol(), isIntDep, rows); err != nil {
-			return err
+		val, err := db.toString(rows, isIntDep)
+		if err != nil {
+			break
+		}
+
+		if len(val) > 0 {
+			list = append(list, val)
 		}
 	}
 
-	return nil
+	return
+}
+
+func (db *Db) LoadPkByCol(tabName, tabCol string, pkList, valList []string) (map[string][]string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
+	defer cancel()
+
+	list := make(map[string][]string)
+	for _, key := range pkList {
+		rows, err := db.con.QueryContext(ctx, fmt.Sprintf("SELECT `%s` FROM `%s` WHERE `%s` IN (%s)",
+			key, tabName, tabCol, strings.Join(valList, ", ")))
+		if err != nil {
+			return list, err
+		}
+
+		IsIntByCol, err := db.IsIntByCol(tabName, key)
+		if err != nil {
+			return list, err
+		}
+
+		for rows.Next() {
+			val, err := db.toString(rows, IsIntByCol)
+			if err != nil {
+				return list, err
+			}
+
+			if len(val) > 0 {
+				list[key] = append(list[key], val)
+			}
+		}
+	}
+
+	return list, nil
 }
 
 func (db *Db) WhereSlice(point PointInterface) []string {
@@ -291,7 +331,7 @@ func (db *Db) Where(keys map[string][]string, isEscape bool) map[string][]string
 	return where
 }
 
-func (db *Db) whereAll(keys map[string][]string) (string, bool) {
+func (db *Db) WhereAll(keys map[string][]string) (string, bool) {
 	var whereList []string
 	for _, list := range db.Where(keys, false) {
 		whereList = append(whereList, "("+strings.Join(list, " OR ")+")")
@@ -306,4 +346,30 @@ func (d *Db) wrapKeys(keys []string, wrapSym string) (list []string) {
 	}
 
 	return
+}
+
+func (db *Db) toString(rows *sql.Rows, isInt bool) (string, error) {
+	var id *int
+	var uid *string
+	var key string
+
+	if isInt {
+		if err := rows.Scan(&id); err != nil {
+			return "", err
+		}
+
+		if id != nil {
+			key = fmt.Sprint(*id)
+		}
+	} else {
+		if err := rows.Scan(&uid); err != nil {
+			return "", err
+		}
+
+		if uid != nil {
+			key = fmt.Sprintf("'%s'", *uid)
+		}
+	}
+
+	return key, nil
 }

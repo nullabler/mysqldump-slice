@@ -28,7 +28,7 @@ func (d *Dumper) RmFile() error {
 }
 
 func (d *Dumper) Struct() error {
-	return d.cli.ExecDump(fmt.Sprintf("--no-data --routines %s", d.conf.DbName()))
+	return d.cli.ExecDump(fmt.Sprintf("--no-data --skip-comments --routines %s", d.conf.DbName()))
 }
 
 func (d *Dumper) Full() error {
@@ -40,30 +40,31 @@ func (d *Dumper) Full() error {
 
 }
 
-func (d *Dumper) Slice(collect entity.CollectInterface) error {
-	for _, table := range collect.Tables() {
-		if d.conf.IsFull(table.Name) {
-			continue
-		}
+func (d *Dumper) Slice(collect entity.CollectInterface, tabName string, keys map[string][]string) (err error) {
+	//for _, table := range collect.Tables() {
+	if d.conf.IsFull(tabName) {
+		//continue
+		return
+	}
 
-		keys := collect.Tab(table.Name).Keys()
+	//keys := collect.Tab(table.Name).Keys()
 
-		point := repository.NewPoint(d.db.Where(keys, true))
-		for _, where := range d.db.WhereSlice(point) {
-			if len(where) > 0 {
-				err := d.cli.ExecDump(fmt.Sprintf(
-					`--skip-triggers --no-create-info %s %s --where="%s"`,
-					d.conf.Database,
-					table.Name,
-					where,
-				))
-				if err != nil {
-					return err
-				}
+	point := repository.NewPoint(d.db.Where(keys, true))
+	for _, where := range d.db.WhereSlice(point) {
+		if len(where) > 0 {
+			err = d.cli.ExecDump(fmt.Sprintf(
+				`--skip-triggers --no-create-info %s %s --where="%s"`,
+				d.conf.Database,
+				tabName,
+				where,
+			))
+			if err != nil {
+				return
 			}
 		}
-		d.log.Infof("- %s......Done", table.Name)
 	}
+	d.log.Infof("- %s......Done", tabName)
+	//}
 
 	return nil
 }
