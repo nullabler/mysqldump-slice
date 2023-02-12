@@ -7,7 +7,7 @@ type TabInterface interface {
 }
 
 type Tab struct {
-	name string
+	name  string
 	exist map[string]Exist
 	pool  map[string]Key
 }
@@ -22,7 +22,7 @@ type Val struct {
 
 func NewTab(tabName string) *Tab {
 	return &Tab{
-		name: tabName,
+		name:  tabName,
 		exist: make(map[string]Exist),
 		pool:  make(map[string]Key),
 	}
