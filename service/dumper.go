@@ -41,13 +41,9 @@ func (d *Dumper) Full() error {
 }
 
 func (d *Dumper) Slice(collect entity.CollectInterface, tabName string, keys map[string][]string) (err error) {
-	//for _, table := range collect.Tables() {
 	if d.conf.IsFull(tabName) {
-		//continue
 		return
 	}
-
-	//keys := collect.Tab(table.Name).Keys()
 
 	point := repository.NewPoint(d.db.Where(keys, true))
 	for _, where := range d.db.WhereSlice(point) {
@@ -64,7 +60,6 @@ func (d *Dumper) Slice(collect entity.CollectInterface, tabName string, keys map
 		}
 	}
 	d.log.Infof("- %s......Done", tabName)
-	//}
 
 	return nil
 }

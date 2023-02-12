@@ -50,7 +50,6 @@ func (c *Collect) PushTab(tabName string) {
 
 func (c *Collect) PushKeyList(tab, col string, list []string) {
 	for _, key := range list {
-		//fmt.Println(c.tabList[tab], tab, col, key)
 		c.tabList[tab].Push(col, key)
 	}
 }
