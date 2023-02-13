@@ -33,7 +33,7 @@ func (l *Loader) Relations(collect entity.CollectInterface) error {
 	for _, spec := range l.conf.Tables.Specs {
 		for _, fk := range spec.Fk {
 			rel := entity.NewRelation()
-			rel.Load(spec.Name, fk.Col, fk.FkTab, fk.FkCol)
+			rel.Load(spec.Name, fk.Col, fk.FkTab, fk.FkCol, spec.Limit)
 			collect.PushRelation(rel)
 		}
 	}
@@ -79,6 +79,25 @@ func (l *Loader) Tables(collect entity.CollectInterface) error {
 	return nil
 }
 
+func (l *Loader) LoadRelationsForLeader(collect entity.CollectInterface) {
+	for _, table := range collect.Tables() {
+		specs, ok := l.conf.Specs(table.Name)
+		if !ok || !specs.IsLeader {
+			continue
+		}
+
+		for _, relList := range collect.AllRelList() {
+			for _, rel := range relList {
+				if rel.RefTab() == specs.Name {
+					relLeader := entity.NewRelation()
+					relLeader.Load(rel.RefTab(), rel.RefCol(), rel.Tab(), rel.Col(), rel.Limit())
+					collect.PushRelation(relLeader)
+				}
+			}
+		}
+	}
+}
+
 func (l *Loader) Weight(collect entity.CollectInterface) error {
 	for _, table := range collect.Tables() {
 		for _, rel := range collect.RelList(table.Name) {
@@ -93,33 +112,26 @@ func (l *Loader) Weight(collect entity.CollectInterface) error {
 	return nil
 }
 
-func (l *Loader) Dependences(collect entity.CollectInterface, rel entity.RelationInterface, tabName, where string) error {
-	list, err := l.db.LoadDeps(tabName, where, rel)
-	if err != nil {
-		return err
-	}
-
-	if !collect.IsPk(rel.RefTab(), rel.RefCol()) {
-		pkList, err := l.db.LoadPkByCol(rel.RefTab(), rel.RefCol(), collect.PkList(tabName), list)
+func (l *Loader) Dependences(collect entity.CollectInterface, rel entity.RelationInterface, tabName string, keys map[string][]string) error {
+	point := repository.NewPoint(l.db.Where(keys, false))
+	for _, where := range l.db.WhereSlice(point) {
+		list, err := l.db.LoadDeps(tabName, where, rel)
 		if err != nil {
 			return err
 		}
-		for col, list := range pkList {
-			collect.PushKeyList(rel.RefTab(), col, list)
+
+		if !collect.IsPk(rel.RefTab(), rel.RefCol()) {
+			pkList, err := l.db.LoadPkByCol(rel.RefTab(), rel.RefCol(), collect.PkList(tabName), list)
+			if err != nil {
+				return err
+			}
+			for col, list := range pkList {
+				collect.PushKeyList(rel.RefTab(), col, list)
+			}
+		} else {
+			collect.PushKeyList(rel.RefTab(), rel.RefCol(), list)
 		}
-	} else {
-		collect.PushKeyList(rel.RefTab(), rel.RefCol(), list)
 	}
 
 	return nil
-}
-
-func (l *Loader) WhereAllByKeys(keys map[string][]string) (where string, ok bool) {
-	if len(keys) == 0 {
-		return
-	}
-
-	where, ok = l.db.WhereAll(keys)
-
-	return
 }

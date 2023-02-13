@@ -20,7 +20,6 @@ type DbInterface interface {
 	LoadPkByCol(string, string, []string, []string) (map[string][]string, error)
 	WhereSlice(PointInterface) []string
 	Where(map[string][]string, bool) map[string][]string
-	WhereAll(map[string][]string) (string, bool)
 }
 
 type Db struct {
@@ -230,10 +229,16 @@ func (db *Db) LoadDeps(tabName, where string, rel entity.RelationInterface) (lis
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
-	rows, err := db.con.QueryContext(ctx, fmt.Sprintf("SELECT `%s` FROM `%s` WHERE %s",
+	limit := ""
+	if rel.Limit() > 0 {
+		limit = fmt.Sprintf("LIMIT %d", rel.Limit())
+	}
+	
+	rows, err := db.con.QueryContext(ctx, fmt.Sprintf("SELECT `%s` FROM `%s` WHERE %s %s",
 		rel.Col(),
 		tabName,
 		where,
+		limit,
 	))
 	if err != nil {
 		return
@@ -329,15 +334,6 @@ func (db *Db) Where(keys map[string][]string, isEscape bool) map[string][]string
 	}
 
 	return where
-}
-
-func (db *Db) WhereAll(keys map[string][]string) (string, bool) {
-	var whereList []string
-	for _, list := range db.Where(keys, false) {
-		whereList = append(whereList, "("+strings.Join(list, " OR ")+")")
-	}
-
-	return strings.Join(whereList, " AND "), len(whereList) > 0
 }
 
 func (d *Db) wrapKeys(keys []string, wrapSym string) (list []string) {

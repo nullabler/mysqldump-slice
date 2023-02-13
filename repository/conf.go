@@ -58,19 +58,21 @@ type Specs struct {
 	Sort      []string `yaml:"sort"`
 	Limit     int      `yaml:"limit"`
 	Condition string   `yaml:"condition"`
+	IsLeader  bool	   `yaml:"is-leader"`
 }
 
 type Fk struct {
 	Col   string `yaml:"col"`
 	FkTab string `yaml:"fk_tab"`
 	FkCol string `yaml:"fk_col"`
+	Limit int `yaml:"limit"`
 }
 
 func NewConf(pathToFile, tmpFilename string) (*Conf, error) {
 	conf := &Conf{
 		shell:    "/bin/sh",
 		Tmp:      tmpFilename,
-		LimitCli: 10,
+		LimitCli: 30,
 		def: Default{
 			dateFormat:               "2006-01-02_15_04",
 			maxConnectCount:          10,

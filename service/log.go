@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"mysqldump-slice/repository"
+	"os"
 )
 
 type LogInterface interface {
@@ -12,6 +13,7 @@ type LogInterface interface {
 	Infof(string, ...any)
 	Error(error)
 	Dump(...interface{})
+	State(string)
 }
 
 type Log struct {
@@ -49,4 +51,13 @@ func (l *Log) Error(err error) {
 
 func (l *Log) Dump(data ...interface{}) {
 	log.Printf("%+v\n", data)
+}
+
+func (l *Log) State(filename string) {
+	f, err := os.Stat(filename)
+	if err != nil {
+		l.Error(err)
+	}
+
+	l.Printf("Save dump: %s......Done (%.2f Mb)", filename, (float64)(f.Size()/1024)/1024)
 }

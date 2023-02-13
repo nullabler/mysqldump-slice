@@ -4,6 +4,7 @@ type CollectInterface interface {
 	PushTable(string)
 	Tables() TableList
 	PushRelation(RelationInterface)
+	AllRelList() map[string][]RelationInterface
 	RelList(string) []RelationInterface
 	PushTab(string)
 	PushKeyList(string, string, []string)
@@ -38,6 +39,10 @@ func (c *Collect) Tables() TableList {
 
 func (c *Collect) PushRelation(rel RelationInterface) {
 	c.relList[rel.Tab()] = append(c.relList[rel.Tab()], rel)
+}
+
+func (c *Collect) AllRelList() map[string][]RelationInterface {
+	return c.relList
 }
 
 func (c *Collect) RelList(tabName string) []RelationInterface {

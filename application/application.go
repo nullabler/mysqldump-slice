@@ -46,6 +46,10 @@ func (app *App) Run() {
 	}
 	app.log.Info("Load tables......Done")
 
+	app.log.Info("Load relations for leader flag......Start")
+	app.loader.LoadRelationsForLeader(collect)
+	app.log.Info("Load relations for leader flag......Done")
+
 	if err := app.dumper.RmFile(); err != nil {
 		app.log.Error(err)
 	}
@@ -63,6 +67,18 @@ func (app *App) Run() {
 	app.log.Info("Dump data like full......Done")
 
 	app.log.Info("Load dependences and dump data like short......Start")
+	app.runSlice(collect)
+	app.log.Info("Load dependences and dump data like short......Done")
+
+	filename, err := app.dumper.Save()
+	if err != nil {
+		app.log.Error(err)
+	}
+
+	app.log.State(filename)
+}
+
+func (app *App) runSlice(collect *entity.Collect) {
 	isLoop := true
 	for {
 		if isLoop {
@@ -79,13 +95,8 @@ func (app *App) Run() {
 				isLoop = true
 			}
 
-			where, ok := app.loader.WhereAllByKeys(keys)
-			if !ok {
-				continue
-			}
-
 			for _, rel := range collect.RelList(table.Name) {
-				if err := app.loader.Dependences(collect, rel, table.Name, where); err != nil {
+				if err := app.loader.Dependences(collect, rel, table.Name, keys); err != nil {
 					app.log.Error(err)
 				}
 			}
@@ -95,11 +106,4 @@ func (app *App) Run() {
 			}
 		}
 	}
-	app.log.Info("Load dependences and dump data like short......Done")
-
-	filename, err := app.dumper.Save()
-	if err != nil {
-		app.log.Error(err)
-	}
-	app.log.Printf("Save dump: %s......Done", filename)
 }

@@ -23,12 +23,14 @@ tables:
     - test 
   specs:
     - name: user
+      is-leader: true
       pk:
         - uuid
       fk:
         - col: category_id
           fk_tab: category
           fk_col: id
+          limit: 3
       sort:
         - updated_at
       limit: 5
