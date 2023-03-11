@@ -58,7 +58,7 @@ type Specs struct {
 	Sort      []string `yaml:"sort"`
 	Limit     int      `yaml:"limit"`
 	Condition string   `yaml:"condition"`
-	IsLeader  bool	   `yaml:"is-leader"`
+	IsLeader  bool     `yaml:"is-leader"`
 }
 
 type Fk struct {

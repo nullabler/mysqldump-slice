@@ -1,59 +1,99 @@
 package entity
 
 type TabInterface interface {
-	Pool() map[*Fields]Val
-	Push(*Fields, string)
-	Pull() map[*Fields][]string
+	isExist([]*Value) bool
+	isUsed([]*Value) bool
+	Rows() []*Row
+	Push([]*Value)
 }
 
 type Tab struct {
 	name string
-	pool map[*Fields]Val
+	rows []*Row
 }
 
-type Val map[string]*Spec
+type Row struct {
+	valList []*Value
+	used    bool
+}
 
-type Fields []string
+type Value struct {
+	key string
+	val string
+}
 
-type Spec struct {
-	used bool
+func NewValue(key, val string) *Value {
+	return &Value{
+		key: key,
+		val: val,
+	}
+}
+
+func (v *Value) contains(valList []*Value) bool {
+	for _, val := range valList {
+		if v.key == val.key && v.val == val.val {
+			return true
+		}
+	}
+
+	return false
+}
+
+func NewRow(valList []*Value) *Row {
+	return &Row{
+		valList: valList,
+		used:    false,
+	}
 }
 
 func NewTab(tabName string) *Tab {
 	return &Tab{
 		name: tabName,
-		pool: make(map[*Fields]Val),
 	}
 }
 
-func (tab *Tab) Push(fl *Fields, val string) {
-	if tab.pool[fl][val] != nil {
-		return
-	}
-
-	if tab.pool[fl] == nil {
-		tab.pool[fl] = make(Val)
-	}
-	tab.pool[fl][val] = &Spec{
-		used: false,
-	}
+func (tab *Tab) Rows() []*Row {
+	return tab.rows
 }
 
-func (tab *Tab) Pool() map[*Fields]Val {
-	return tab.pool
-}
-
-func (tab *Tab) Pull() map[*Fields][]string {
-	list := make(map[*Fields][]string)
-
-	for f, pool := range tab.pool {
-		for val, key := range pool {
-			if !key.used {
-				list[f] = append(list[f], val)
-				key.used = true
+func (tab *Tab) isExist(valList []*Value) bool {
+	for _, row := range tab.rows {
+		flag := true
+		for _, val := range row.valList {
+			if flag && !val.contains(valList) {
+				flag = false
 			}
+		}
+
+		if flag {
+			return true
 		}
 	}
 
-	return list
+	return false
+}
+
+func (tab *Tab) isUsed(valList []*Value) bool {
+	for _, row := range tab.rows {
+		flag := true
+		for _, val := range row.valList {
+			if flag && !val.contains(valList) {
+				flag = false
+			}
+		}
+
+		if flag {
+			return row.used
+		}
+	}
+
+	return false
+}
+
+func (tab *Tab) Push(valList []*Value) {
+	if tab.isExist(valList) {
+		return
+	}
+
+	tab.rows = append(tab.rows, NewRow(valList))
 }

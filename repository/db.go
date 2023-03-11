@@ -240,7 +240,7 @@ func (db *Db) LoadDeps(tabName, where string, rel entity.RelationInterface) (lis
 			fmt.Println("===================", limit)
 		}
 	}
-	
+
 	rows, err := db.con.QueryContext(ctx, fmt.Sprintf("SELECT `%s` FROM `%s` WHERE %s %s",
 		rel.Col(),
 		tabName,

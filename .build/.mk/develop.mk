@@ -9,6 +9,9 @@ fmt: ## run gofmt
 test: ## run go test
 	go test ./repository/ -v
 
+dev: ## run development watching
+	watch go test ./entity/ -v
+
 clear: 
 	sudo rm -r target/*
 

@@ -17,7 +17,7 @@ type Relation struct {
 	column    string
 	refTable  string
 	refColumn string
-	limit int
+	limit     int
 }
 
 func NewRelation() *Relation {
