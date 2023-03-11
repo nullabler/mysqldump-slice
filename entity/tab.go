@@ -1,62 +1,55 @@
 package entity
 
 type TabInterface interface {
-	Pool() map[string]Key
-	Push(string, string)
-	Pull() map[string][]string
+	Pool() map[*Fields]Val
+	Push(*Fields, string)
+	Pull() map[*Fields][]string
 }
 
 type Tab struct {
-	name  string
-	exist map[string]Exist
-	pool  map[string]Key
+	name string
+	pool map[*Fields]Val
 }
 
-type Exist map[string]bool
+type Val map[string]*Spec
 
-type Key map[string]*Val
+type Fields []string
 
-type Val struct {
+type Spec struct {
 	used bool
 }
 
 func NewTab(tabName string) *Tab {
 	return &Tab{
-		name:  tabName,
-		exist: make(map[string]Exist),
-		pool:  make(map[string]Key),
+		name: tabName,
+		pool: make(map[*Fields]Val),
 	}
 }
 
-func (tab *Tab) Push(col, val string) {
-	if tab.exist[col][val] {
+func (tab *Tab) Push(fl *Fields, val string) {
+	if tab.pool[fl][val] != nil {
 		return
 	}
 
-	if tab.exist[col] == nil {
-		tab.exist[col] = make(Exist)
+	if tab.pool[fl] == nil {
+		tab.pool[fl] = make(Val)
 	}
-	tab.exist[col][val] = true
-
-	if tab.pool[col] == nil {
-		tab.pool[col] = make(Key)
-	}
-	tab.pool[col][val] = &Val{
+	tab.pool[fl][val] = &Spec{
 		used: false,
 	}
 }
 
-func (tab *Tab) Pool() map[string]Key {
+func (tab *Tab) Pool() map[*Fields]Val {
 	return tab.pool
 }
 
-func (tab *Tab) Pull() map[string][]string {
-	list := make(map[string][]string)
+func (tab *Tab) Pull() map[*Fields][]string {
+	list := make(map[*Fields][]string)
 
-	for col, pool := range tab.pool {
+	for f, pool := range tab.pool {
 		for val, key := range pool {
 			if !key.used {
-				list[col] = append(list[col], val)
+				list[f] = append(list[f], val)
 				key.used = true
 			}
 		}

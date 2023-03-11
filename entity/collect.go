@@ -53,9 +53,9 @@ func (c *Collect) PushTab(tabName string) {
 	c.tabList[tabName] = NewTab(tabName)
 }
 
-func (c *Collect) PushKeyList(tab, col string, list []string) {
+func (c *Collect) PushKeyList(tab string, fl *Fields, list []string) {
 	for _, key := range list {
-		c.tabList[tab].Push(col, key)
+		c.tabList[tab].Push(fl, key)
 	}
 }
 

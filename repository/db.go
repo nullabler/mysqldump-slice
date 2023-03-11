@@ -229,9 +229,16 @@ func (db *Db) LoadDeps(tabName, where string, rel entity.RelationInterface) (lis
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
+	if tabName == "sym_order" && rel.RefTab() == "billing_balance_log" {
+		fmt.Println("*****************", tabName, rel)
+	}
+
 	limit := ""
 	if rel.Limit() > 0 {
 		limit = fmt.Sprintf("LIMIT %d", rel.Limit())
+		if tabName == "sym_order" && rel.Tab() == "billing_balance_log" {
+			fmt.Println("===================", limit)
+		}
 	}
 	
 	rows, err := db.con.QueryContext(ctx, fmt.Sprintf("SELECT `%s` FROM `%s` WHERE %s %s",

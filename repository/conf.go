@@ -65,7 +65,7 @@ type Fk struct {
 	Col   string `yaml:"col"`
 	FkTab string `yaml:"fk_tab"`
 	FkCol string `yaml:"fk_col"`
-	Limit int `yaml:"limit"`
+	Limit int    `yaml:"limit"`
 }
 
 func NewConf(pathToFile, tmpFilename string) (*Conf, error) {
