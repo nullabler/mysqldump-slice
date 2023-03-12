@@ -16,10 +16,10 @@ func NewValue(key, val string) *Value {
 
 func (v *Value) Sprint(isEscape bool) string {
 	if isEscape {
-		return fmt.Sprintf("\\`%s\\` = '%s'", v.key, v.val)
+		return fmt.Sprintf("\\`%s\\` = %s", v.key, v.val)
 	}
 
-	return fmt.Sprintf("`%s` = '%s'", v.key, v.val)
+	return fmt.Sprintf("`%s` = %s", v.key, v.val)
 }
 
 func (v *Value) contains(valList []*Value) bool {

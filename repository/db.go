@@ -15,11 +15,9 @@ type DbInterface interface {
 	LoadRelations(entity.CollectInterface) error
 	LoadTables(entity.CollectInterface) error
 	PrimaryKeys(string) ([]string, error)
-	LoadIds(string, bool, Specs, []string, int) (map[string][]string, error)
+	LoadIds(string, bool, Specs, []string, int) ([]*entity.Value, error)
 	LoadDeps(string, string, entity.RelationInterface) ([]string, error)
 	LoadPkByCol(string, string, []string, []string) ([]*entity.Value, error)
-	WhereSlice(PointInterface) []string
-	Where(map[string][]string, bool) map[string][]string
 
 	Sql() SqlInterface
 }
@@ -175,7 +173,7 @@ func (db *Db) PrimaryKeys(tabName string) ([]string, error) {
 	return keyList, nil
 }
 
-func (db *Db) LoadIds(tabName string, okSpecs bool, specs Specs, prKeyList []string, confLimit int) (map[string][]string, error) {
+func (db *Db) LoadIds(tabName string, okSpecs bool, specs Specs, prKeyList []string, confLimit int) ([]*entity.Value, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
@@ -201,7 +199,7 @@ func (db *Db) LoadIds(tabName string, okSpecs bool, specs Specs, prKeyList []str
 		}
 	}
 
-	list := make(map[string][]string)
+	list := []*entity.Value{}
 	for _, key := range prKeyList {
 		rows, err := db.con.QueryContext(ctx, fmt.Sprintf("SELECT `%s` FROM `%s` %s ORDER BY %s DESC %s",
 			key, tabName, condition, sort, limit))
@@ -221,7 +219,7 @@ func (db *Db) LoadIds(tabName string, okSpecs bool, specs Specs, prKeyList []str
 			}
 
 			if len(val) > 0 {
-				list[key] = append(list[key], val)
+				list = append(list, entity.NewValue(key, val))
 			}
 		}
 	}
@@ -304,47 +302,6 @@ func (db *Db) LoadPkByCol(tabName, tabCol string, pkList, valList []string) ([]*
 	}
 
 	return list, nil
-}
-
-func (db *Db) WhereSlice(point PointInterface) []string {
-	var where []string
-	var query []string
-	for n := 0; n < point.Count(); n++ {
-		col, i := point.Next(n)
-		query = append(query, point.Key(col, i))
-
-		if point.Current() == 0 {
-			where = append(where, strings.Join(query, " AND "))
-			query = []string{}
-		}
-
-	}
-
-	return where
-}
-
-func (db *Db) Where(keys map[string][]string, isEscape bool) map[string][]string {
-	where := make(map[string][]string)
-	for col, valList := range keys {
-		limit := 0
-
-		if isEscape {
-			col = fmt.Sprintf("\\`%s\\`", col)
-		} else {
-			col = fmt.Sprintf("`%s`", col)
-		}
-
-		for start := 0; start < len(valList); start += db.conf.LimitCli {
-			limit += db.conf.LimitCli
-			if limit > len(valList) {
-				limit = len(valList)
-			}
-
-			where[col] = append(where[col], fmt.Sprintf("%s IN (%s)", col, strings.Join(valList[start:limit], ", ")))
-		}
-	}
-
-	return where
 }
 
 func (db *Db) Sql() SqlInterface {

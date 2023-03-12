@@ -65,14 +65,12 @@ func (l *Loader) Tables(collect entity.CollectInterface) error {
 			limit = 0
 		}
 
-		list, err := l.db.LoadIds(table.Name, ok, specs, prKeyList, limit)
+		valList, err := l.db.LoadIds(table.Name, ok, specs, prKeyList, limit)
 		if err != nil {
 			return err
 		}
 
-		for key, valList := range list {
-			collect.PushKeyList(table.Name, key, valList)
-		}
+		collect.PushValList(table.Name, valList)
 
 		l.log.Infof("- %s......Done", table.Name)
 	}
