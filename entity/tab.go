@@ -5,45 +5,12 @@ type TabInterface interface {
 	isUsed([]*Value) bool
 	Rows() []*Row
 	Push([]*Value)
+	Pull() []*Row
 }
 
 type Tab struct {
 	name string
 	rows []*Row
-}
-
-type Row struct {
-	valList []*Value
-	used    bool
-}
-
-type Value struct {
-	key string
-	val string
-}
-
-func NewValue(key, val string) *Value {
-	return &Value{
-		key: key,
-		val: val,
-	}
-}
-
-func (v *Value) contains(valList []*Value) bool {
-	for _, val := range valList {
-		if v.key == val.key && v.val == val.val {
-			return true
-		}
-	}
-
-	return false
-}
-
-func NewRow(valList []*Value) *Row {
-	return &Row{
-		valList: valList,
-		used:    false,
-	}
 }
 
 func NewTab(tabName string) *Tab {
@@ -54,6 +21,17 @@ func NewTab(tabName string) *Tab {
 
 func (tab *Tab) Rows() []*Row {
 	return tab.rows
+}
+
+func (tab *Tab) Pull() (list []*Row) {
+	for _, row := range tab.Rows() {
+		if !row.IsUsed() {
+			row.ApplyUsed()
+			list = append(list, row)
+		}
+	}
+
+	return
 }
 
 func (tab *Tab) isExist(valList []*Value) bool {

@@ -40,13 +40,12 @@ func (d *Dumper) Full() error {
 
 }
 
-func (d *Dumper) Slice(collect entity.CollectInterface, tabName string, keys map[string][]string) (err error) {
+func (d *Dumper) Slice(collect entity.CollectInterface, tabName string, rows []*entity.Row) (err error) {
 	if d.conf.IsFull(tabName) {
 		return
 	}
 
-	point := repository.NewPoint(d.db.Where(keys, true))
-	for _, where := range d.db.WhereSlice(point) {
+	for _, where := range d.db.Sql().WhereSlice(rows, true) {
 		if len(where) > 0 {
 			err = d.cli.ExecDump(fmt.Sprintf(
 				`--skip-triggers --no-create-info %s %s --where="%s"`,

@@ -17,15 +17,18 @@ type DbInterface interface {
 	PrimaryKeys(string) ([]string, error)
 	LoadIds(string, bool, Specs, []string, int) (map[string][]string, error)
 	LoadDeps(string, string, entity.RelationInterface) ([]string, error)
-	LoadPkByCol(string, string, []string, []string) (map[string][]string, error)
+	LoadPkByCol(string, string, []string, []string) ([]*entity.Value, error)
 	WhereSlice(PointInterface) []string
 	Where(map[string][]string, bool) map[string][]string
+
+	Sql() SqlInterface
 }
 
 type Db struct {
 	name string
 	con  *sql.DB
 	conf *Conf
+	sql  SqlInterface
 
 	isClose bool
 }
@@ -43,6 +46,7 @@ func NewDb(conf *Conf, driver string) (*Db, error) {
 		name: conf.Database,
 		con:  con,
 		conf: conf,
+		sql:  NewSql(conf),
 
 		isClose: false,
 	}, nil
@@ -270,11 +274,11 @@ func (db *Db) LoadDeps(tabName, where string, rel entity.RelationInterface) (lis
 	return
 }
 
-func (db *Db) LoadPkByCol(tabName, tabCol string, pkList, valList []string) (map[string][]string, error) {
+func (db *Db) LoadPkByCol(tabName, tabCol string, pkList, valList []string) ([]*entity.Value, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
-	list := make(map[string][]string)
+	list := []*entity.Value{}
 	for _, key := range pkList {
 		rows, err := db.con.QueryContext(ctx, fmt.Sprintf("SELECT `%s` FROM `%s` WHERE `%s` IN (%s)",
 			key, tabName, tabCol, strings.Join(valList, ", ")))
@@ -294,7 +298,7 @@ func (db *Db) LoadPkByCol(tabName, tabCol string, pkList, valList []string) (map
 			}
 
 			if len(val) > 0 {
-				list[key] = append(list[key], val)
+				list = append(list, entity.NewValue(key, val))
 			}
 		}
 	}
@@ -341,6 +345,10 @@ func (db *Db) Where(keys map[string][]string, isEscape bool) map[string][]string
 	}
 
 	return where
+}
+
+func (db *Db) Sql() SqlInterface {
+	return db.sql
 }
 
 func (d *Db) wrapKeys(keys []string, wrapSym string) (list []string) {

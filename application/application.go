@@ -88,20 +88,20 @@ func (app *App) runSlice(collect *entity.Collect) {
 		}
 
 		for _, table := range collect.Tables() {
-			keys := collect.Tab(table.Name).Pull()
-			if len(keys) == 0 {
+			rows := collect.Tab(table.Name).Pull()
+			if len(rows) == 0 {
 				continue
 			} else {
 				isLoop = true
 			}
 
 			for _, rel := range collect.RelList(table.Name) {
-				if err := app.loader.Dependences(collect, rel, table.Name, keys); err != nil {
+				if err := app.loader.Dependences(collect, rel, table.Name, rows); err != nil {
 					app.log.Error(err)
 				}
 			}
 
-			if err := app.dumper.Slice(collect, table.Name, keys); err != nil {
+			if err := app.dumper.Slice(collect, table.Name, rows); err != nil {
 				app.log.Error(err)
 			}
 		}

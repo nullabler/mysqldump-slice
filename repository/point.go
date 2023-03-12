@@ -15,13 +15,13 @@ type Point struct {
 	match   map[string]int
 	current int
 
-	keys map[string][]string
+	whereList []string
 }
 
-func NewPoint(keys map[string][]string) *Point {
+func NewPoint(whereList []string) *Point {
 	p := &Point{
-		match: make(map[string]int),
-		keys:  keys,
+		match:     make(map[string]int),
+		whereList: whereList,
 	}
 
 	n := 0
