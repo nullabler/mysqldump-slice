@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"fmt"
 	"mysqldump-slice/entity"
 	"strings"
@@ -14,7 +15,7 @@ type SqlInterface interface {
 	QueryFullTables(string) string
 	QueryPrimaryKeys() string
 	QueryIsIntByCol() string
-	QueryLoadIds(string, string, bool, Specs, []string, int) string
+	QueryLoadIds(string, string, bool, Specs, []string, int) (string, error)
 	QueryLoadDeps(string, string, string, string) string
 	QueryLoadPkByCol(string, string, string, []string) string
 }
@@ -99,11 +100,14 @@ func (s *Sql) QueryIsIntByCol() string {
 		AND column_name = ?;`
 }
 
-func (s *Sql) QueryLoadIds(key, tabName string, okSpecs bool, specs Specs, prKeyList []string, confLimit int) string {
+func (s *Sql) QueryLoadIds(key, tabName string, okSpecs bool, specs Specs, prKeyList []string, confLimit int) (string, error) {
 	var sort string
 	if okSpecs && len(specs.Sort) > 0 {
 		sort = strings.Join(s.wrapKeys(specs.Sort, "`"), ", ")
 	} else {
+		if len(prKeyList) == 0 {
+			return "", errors.New(fmt.Sprintf("Empty PrimaryKeyList for Key: %s, TabName: %s", key, tabName))
+		}
 		sort = strings.Join(s.wrapKeys(prKeyList, "`"), ", ")
 	}
 
@@ -123,7 +127,7 @@ func (s *Sql) QueryLoadIds(key, tabName string, okSpecs bool, specs Specs, prKey
 	}
 
 	return fmt.Sprintf("SELECT `%s` FROM `%s` %s ORDER BY %s DESC %s",
-		key, tabName, condition, sort, limit)
+		key, tabName, condition, sort, limit), nil
 }
 
 func (s *Sql) QueryLoadDeps(col, tabName, where, limit string) string {

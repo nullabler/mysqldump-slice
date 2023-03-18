@@ -117,24 +117,53 @@ func TestIsUsedForComposition(t *testing.T) {
 func TestPush(t *testing.T) {
 	tab := NewTab("test")
 
-	for _, i := range []string{"1", "2", "3"} {
+	for _, i := range []string{"1", "2", "3", "2"} {
 		valList := []*Value{}
 		valList = append(valList, NewValue("id", i))
-		tab.rows = append(tab.rows, NewRow(valList))
+		tab.Push(valList)
 	}
 
 	if len(tab.Rows()) != 3 {
 		t.Error("Fail count after push simple")
 	}
 
-	for _, i := range []string{"1", "2", "3", "8"} {
+	for _, i := range []string{"1", "2", "3", "8", "2", "3"} {
 		valList := []*Value{}
 		valList = append(valList, NewValue("user_id", i))
 		valList = append(valList, NewValue("category_id", i+"5"))
-		tab.rows = append(tab.rows, NewRow(valList))
+		tab.Push(valList)
 	}
 
 	if len(tab.Rows()) != 7 {
 		t.Error("Fail count after push mixed")
+	}
+}
+
+func TestPull(t *testing.T) {
+	tab := NewTab("test")
+
+	for _, i := range []string{"5", "8"} {
+		valList := []*Value{
+			NewValue("uuid", "1"+i),
+			NewValue("cat_id", "3"+i),
+		}
+		tab.rows = append(tab.rows, NewRow(valList))
+	}
+
+	r := tab.Pull()
+	if len(r) != 2 {
+		t.Error("Fail count after set rows")
+	}
+
+	if !r[0].IsUsed() {
+		t.Error("Fail row is not used")
+	}
+
+	if len(r[0].ValList()) != 2 {
+		t.Error("Fail is not correct count valList after call pull")
+	}
+
+	if len(tab.Pull()) != 0 {
+		t.Error("Fail count after double pull")
 	}
 }

@@ -153,7 +153,12 @@ func (db *Db) LoadIds(tabName string, okSpecs bool, specs Specs, prKeyList []str
 
 	list := []*entity.Value{}
 	for _, key := range prKeyList {
-		rows, err := db.con.QueryContext(ctx, db.Sql().QueryLoadIds(key, tabName, okSpecs, specs, prKeyList, confLimit))
+		sql, errSql := db.Sql().QueryLoadIds(key, tabName, okSpecs, specs, prKeyList, confLimit)
+		if errSql != nil {
+			return list, errSql
+		}
+
+		rows, err := db.con.QueryContext(ctx, sql)
 		if err != nil {
 			return list, err
 		}

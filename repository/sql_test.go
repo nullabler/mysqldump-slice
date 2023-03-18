@@ -75,3 +75,79 @@ func TestWhereSlice(t *testing.T) {
 	}
 
 }
+
+func TestQueryLoadIds(t *testing.T) {
+	c := &Conf{}
+	s := NewSql(c)
+
+	specs := Specs{}
+	prKeyList := []string{}
+
+	_, err := s.QueryLoadIds(
+		"cat_id",
+		"user",
+		false,
+		specs,
+		prKeyList,
+		2,
+	)
+
+	if err == nil {
+		t.Error("Should be set prKeyList field for Sort")
+	}
+
+	prKeyList = []string{"id"}
+	exp := "SELECT `cat_id` FROM `user`  ORDER BY `id` DESC LIMIT 2"
+	got, er := s.QueryLoadIds(
+		"cat_id",
+		"user",
+		true,
+		specs,
+		prKeyList,
+		2,
+	)
+	if er != nil {
+		t.Error(er)
+	}
+
+	if exp != got {
+		t.Errorf("Fail for QueryLoadIds Exp: %s Got: %s", exp, got)
+	}
+
+	specs = Specs{
+		Condition: "`updated_at` > NOW()",
+		Sort:      []string{"updated_at", "created_at"},
+		Limit:     3,
+	}
+
+	exp = "SELECT `cat_id` FROM `user` WHERE `updated_at` > NOW() ORDER BY `updated_at`, `created_at` DESC LIMIT 3"
+	got, er = s.QueryLoadIds(
+		"cat_id",
+		"user",
+		true,
+		specs,
+		prKeyList,
+		2,
+	)
+	if er != nil {
+		t.Error(er)
+	}
+
+	if exp != got {
+		t.Errorf("Fail for QueryLoadIds Exp: %s Got: %s", exp, got)
+	}
+}
+
+func TestWrapKeys(t *testing.T) {
+	c := &Conf{}
+	s := NewSql(c)
+
+	keys := []string{"test", "word"}
+	list := s.wrapKeys(keys, "#")
+	for i, item := range list {
+		exp := "#" + keys[i] + "#"
+		if item != exp {
+			t.Errorf("Fail for wrapKeys Exp: %s Got: %s", exp, item)
+		}
+	}
+}

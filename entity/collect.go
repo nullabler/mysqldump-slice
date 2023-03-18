@@ -2,7 +2,6 @@ package entity
 
 import (
 	"errors"
-	"fmt"
 )
 
 type CollectInterface interface {
@@ -101,7 +100,6 @@ func (c *Collect) isValid(tabName string, valList []*Value) bool {
 		}
 
 		if !flag {
-			fmt.Println(pk, valList)
 			return false
 		}
 	}
