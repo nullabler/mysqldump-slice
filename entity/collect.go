@@ -1,6 +1,9 @@
 package entity
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type CollectInterface interface {
 	PushTable(string)
@@ -57,6 +60,10 @@ func (c *Collect) PushTab(tabName string) {
 }
 
 func (c *Collect) PushValList(tabName string, valList []*Value) error {
+	if len(valList) == 0 {
+		return nil
+	}
+
 	if !c.isValid(tabName, valList) {
 		return errors.New("ValList is not valid")
 	}
@@ -85,10 +92,6 @@ func (c *Collect) PkList(tabName string) []string {
 }
 
 func (c *Collect) isValid(tabName string, valList []*Value) bool {
-	if len(c.PkList(tabName)) != len(valList) {
-		return false
-	}
-
 	for _, pk := range c.PkList(tabName) {
 		flag := false
 		for _, val := range valList {
@@ -98,6 +101,7 @@ func (c *Collect) isValid(tabName string, valList []*Value) bool {
 		}
 
 		if !flag {
+			fmt.Println(pk, valList)
 			return false
 		}
 	}

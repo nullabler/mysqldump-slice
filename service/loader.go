@@ -70,7 +70,9 @@ func (l *Loader) Tables(collect entity.CollectInterface) error {
 			return err
 		}
 
-		collect.PushValList(table.Name, valList)
+		if err := collect.PushValList(table.Name, valList); err != nil {
+			return err
+		}
 
 		l.log.Infof("- %s......Done", table.Name)
 	}
@@ -111,7 +113,6 @@ func (l *Loader) Weight(collect entity.CollectInterface) error {
 }
 
 func (l *Loader) Dependences(collect entity.CollectInterface, rel entity.RelationInterface, tabName string, rows []*entity.Row) error {
-	//point := repository.NewPoint(l.db.Where(keys, false))
 	for _, where := range l.db.Sql().WhereSlice(rows, false) {
 		list, err := l.db.LoadDeps(tabName, where, rel)
 		if err != nil {
@@ -124,12 +125,31 @@ func (l *Loader) Dependences(collect entity.CollectInterface, rel entity.Relatio
 				return err
 			}
 
-			collect.PushValList(rel.RefTab(), valList)
+			if err := collect.PushValList(rel.RefTab(), valList); err != nil {
+				return err
+			}
 			//for col, list := range pkList {
 			//collect.PushValList(rel.RefTab(), col, list)
 			//}
 		} else {
-			//collect.PushKeyList(rel.RefTab(), rel.RefCol(), list)
+			if len(collect.PkList(tabName)) > 1 {
+				valList, err := l.db.LoadPkByCol(rel.RefTab(), rel.RefCol(), collect.PkList(tabName), list)
+				if err != nil {
+					return err
+				}
+
+				if err := collect.PushValList(rel.RefTab(), valList); err != nil {
+					return err
+				}
+			} else {
+				valList := []*entity.Value{}
+				for _, v := range list {
+					valList = append(valList, entity.NewValue(rel.RefCol(), v))
+				}
+				if err := collect.PushValList(rel.RefTab(), valList); err != nil {
+					return err
+				}
+			}
 		}
 	}
 
