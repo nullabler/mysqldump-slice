@@ -10,7 +10,7 @@ test: ## run go test [make test]
 	go test ./repository/ ./entity/ -v
 
 dev: ## run development watching [make dev]
-	watch go test ./repository/ -v
+	watch go test ./service/ -v
 
 clear: ## clear target direct [make clear] 
 	sudo rm -r target/*
