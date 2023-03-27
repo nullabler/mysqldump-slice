@@ -3,45 +3,18 @@ package repository
 import (
 	"errors"
 	"mysqldump-slice/entity"
+	"strconv"
 )
 
 type DbMock struct {
-	point  string
-	iter   int
-	impact int
-
 	flag    bool
 	err     error
 	valList []*entity.Value
 	strList []string
-	sql     SqlInterface
 }
 
-func NewDbMock(conf *Conf) *DbMock {
-	return &DbMock{
-		iter: 1,
-		sql:  NewSql(conf),
-	}
-}
-
-func (d *DbMock) Point(point string, iter int) {
-	d.point = point
-	d.iter = iter
-	d.impact = 0
-}
-
-func (d *DbMock) Impact(point string) bool {
-	if point != d.point {
-		return false
-	}
-
-	d.impact++
-	if d.impact == d.iter {
-		d.impact = 0
-		return true
-	}
-
-	return false
+func NewDbMock() *DbMock {
+	return &DbMock{}
 }
 
 func (d *DbMock) Flag(flag bool) {
@@ -60,74 +33,103 @@ func (d *DbMock) StrList(strList []string) {
 	d.strList = strList
 }
 
-type DbMockWrapper struct {
-	mock *DbMock
+type ConfDbMock map[string]*DbMock
+
+func KeyForMock(name string, iter int) string {
+	return name + ":" + strconv.Itoa(iter)
 }
 
-func NewDbMockWrapper(mock *DbMock) *DbMockWrapper {
+type DbMockWrapper struct {
+	mock ConfDbMock
+	iter map[string]int
+
+	sql SqlInterface
+}
+
+func NewDbMockWrapper(conf *Conf, confMock ConfDbMock) *DbMockWrapper {
 	return &DbMockWrapper{
-		mock: mock,
+		mock: confMock,
+		iter: make(map[string]int),
+		sql:  NewSql(conf),
 	}
+}
+
+func (db *DbMockWrapper) Impact(name string) *DbMock {
+	_, ok := db.iter[name]
+	if !ok {
+		db.iter[name] = 0
+	}
+
+	db.iter[name]++
+
+	return db.mock[KeyForMock(name, db.iter[name])]
 }
 
 func (db *DbMockWrapper) Close() {}
 
 func (db *DbMockWrapper) IsIntByCol(string, string) (bool, error) {
-	if !db.mock.Impact("IsIntByCol") {
+	mock := db.Impact("IsIntByCol")
+	if mock == nil {
 		return false, nil
 	}
 
-	return db.mock.flag, db.mock.err
+	return mock.flag, mock.err
 }
 
 func (db *DbMockWrapper) LoadRelations(entity.CollectInterface) error {
-	if !db.mock.Impact("LoadRelations") {
+	mock := db.Impact("LoadRelations")
+	if mock == nil {
 		return nil
 	}
 
-	return db.mock.err
+	return mock.err
 }
 
 func (db *DbMockWrapper) LoadTables(entity.CollectInterface) error {
-	if !db.mock.Impact("LoadTables") {
+	mock := db.Impact("LoadTables")
+	if mock == nil {
 		return nil
 	}
 
-	return db.mock.err
+	return mock.err
 }
 
-func (db *DbMockWrapper) PrimaryKeys(string) ([]string, error) {
-	if !db.mock.Impact("PrimaryKeys") {
+func (db *DbMockWrapper) PrimaryKeys(key string) ([]string, error) {
+	mock := db.Impact("PrimaryKeys_" + key)
+	if mock == nil {
 		return nil, nil
 	}
 
-	return db.mock.strList, db.mock.err
+	return mock.strList, mock.err
 }
 
-func (db *DbMockWrapper) LoadIds(string, bool, Specs, []string, int) ([]*entity.Value, error) {
-	if !db.mock.Impact("LoadIds") {
+func (db *DbMockWrapper) LoadIds(key string, b bool, s Specs, l []string, i int) ([]*entity.Value, error) {
+	mock := db.Impact("LoadIds_" + key)
+	if mock == nil {
 		return nil, nil
 	}
 
-	return db.mock.valList, db.mock.err
+	return mock.valList, mock.err
 }
 
 func (db *DbMockWrapper) LoadDeps(string, string, entity.RelationInterface) ([]string, error) {
-	if !db.mock.Impact("LoadDeps") {
+	mock := db.Impact("LoadDeps")
+	if mock == nil {
 		return nil, nil
 	}
 
-	return db.mock.strList, db.mock.err
+	return mock.strList, mock.err
 }
 
 func (db *DbMockWrapper) LoadPkByCol(string, string, []string, []string) ([]*entity.Value, error) {
-	if !db.mock.Impact("LoadPkByCol") {
+	mock := db.Impact("LoadPkByCol")
+	if mock == nil {
 		return nil, nil
 	}
 
-	return db.mock.valList, db.mock.err
+	return mock.valList, mock.err
 }
 
 func (db *DbMockWrapper) Sql() SqlInterface {
-	return db.mock.sql
+	return db.sql
 }
