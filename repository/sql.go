@@ -15,7 +15,7 @@ type SqlInterface interface {
 	QueryFullTables(string) string
 	QueryPrimaryKeys() string
 	QueryIsIntByCol() string
-	QueryLoadIds(string, string, bool, Specs, []string, int) (string, error)
+	QueryLoadIds(string, *Specs, []string) (string, error)
 	QueryLoadDeps(string, string, string, string) string
 	QueryLoadPkByCol(string, string, string, []string) string
 }
@@ -100,34 +100,54 @@ func (s *Sql) QueryIsIntByCol() string {
 		AND column_name = ?;`
 }
 
-func (s *Sql) QueryLoadIds(key, tabName string, okSpecs bool, specs Specs, prKeyList []string, confLimit int) (string, error) {
+func (s *Sql) QueryLoadIds(tabName string, specs *Specs, prKeyList []string) (string, error) {
+	if len(prKeyList) == 0 {
+		return "", errors.New(fmt.Sprintf("Empty PrimaryKeyList for TabName: %s", tabName))
+	}
+
+	fields, sort := s.fieldsAndSort(prKeyList, specs)
+
+	return fmt.Sprintf("SELECT %s FROM `%s` %s ORDER BY %s DESC %s",
+		fields,
+		tabName,
+		s.condition(specs),
+		sort,
+		s.limit(tabName, specs),
+	), nil
+}
+
+func (s *Sql) fieldsAndSort(prKeyList []string, specs *Specs) (string, string) {
+	fields := strings.Join(s.wrapKeys(prKeyList, "`"), ", ")
+
 	var sort string
-	if okSpecs && len(specs.Sort) > 0 {
+	if specs != nil && len(specs.Sort) > 0 {
 		sort = strings.Join(s.wrapKeys(specs.Sort, "`"), ", ")
 	} else {
-		if len(prKeyList) == 0 {
-			return "", errors.New(fmt.Sprintf("Empty PrimaryKeyList for Key: %s, TabName: %s", key, tabName))
-		}
-		sort = strings.Join(s.wrapKeys(prKeyList, "`"), ", ")
+		sort = fields
 	}
 
-	var condition, limit string
-	if okSpecs && len(specs.Condition) > 0 {
-		condition = "WHERE " + specs.Condition
-		if specs.Limit > 0 {
-			limit = fmt.Sprintf("LIMIT %d", specs.Limit)
-		}
+	return fields, sort
+}
+
+func (s *Sql) condition(specs *Specs) string {
+	if specs != nil && len(specs.Condition) > 0 {
+		return fmt.Sprintf("WHERE %w", specs.Condition)
 	}
 
-	if len(condition) == 0 && confLimit > 0 {
-		limit = fmt.Sprintf("LIMIT %d", confLimit)
-		if okSpecs && specs.Limit > 0 {
-			limit = fmt.Sprintf("LIMIT %d", specs.Limit)
-		}
+	return ""
+}
+
+func (s *Sql) limit(tabName string, specs *Specs) string {
+	if s.conf.IsFull(tabName) {
+		return ""
 	}
 
-	return fmt.Sprintf("SELECT `%s` FROM `%s` %s ORDER BY %s DESC %s",
-		key, tabName, condition, sort, limit), nil
+	limit := s.conf.Tables.Limit
+	if specs != nil && specs.Limit > 0 {
+		limit = specs.Limit
+	}
+
+	return fmt.Sprintln("LIMIT %d", limit)
 }
 
 func (s *Sql) QueryLoadDeps(col, tabName, where, limit string) string {

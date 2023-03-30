@@ -60,12 +60,7 @@ func (l *Loader) Tables(collect entity.CollectInterface) error {
 
 		collect.PushPkList(table.Name, prKeyList)
 
-		limit := l.conf.Tables.Limit
-		if l.conf.IsFull(table.Name) {
-			limit = 0
-		}
-
-		valList, err := l.db.LoadIds(table.Name, ok, specs, prKeyList, limit)
+		valList, err := l.db.LoadIds(table.Name, &specs, prKeyList)
 		if err != nil {
 			return err
 		}

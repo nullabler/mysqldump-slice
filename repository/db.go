@@ -14,7 +14,7 @@ type DbInterface interface {
 	LoadRelations(entity.CollectInterface) error
 	LoadTables(entity.CollectInterface) error
 	PrimaryKeys(string) ([]string, error)
-	LoadIds(string, bool, Specs, []string, int) ([]*entity.Value, error)
+	LoadIds(string, *Specs, []string) ([]*entity.Value, error)
 	LoadDeps(string, string, entity.RelationInterface) ([]string, error)
 	LoadPkByCol(string, string, []string, []string) ([]*entity.Value, error)
 
@@ -147,17 +147,18 @@ func (db *Db) PrimaryKeys(tabName string) ([]string, error) {
 	return keyList, nil
 }
 
-func (db *Db) LoadIds(tabName string, okSpecs bool, specs Specs, prKeyList []string, confLimit int) ([]*entity.Value, error) {
+func (db *Db) LoadIds(tabName string, specs *Specs, prKeyList []string) ([]*entity.Value, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
 	list := []*entity.Value{}
 	for _, key := range prKeyList {
-		sql, errSql := db.Sql().QueryLoadIds(key, tabName, okSpecs, specs, prKeyList, confLimit)
+		sql, errSql := db.Sql().QueryLoadIds(tabName, specs, prKeyList)
 		if errSql != nil {
 			return list, errSql
 		}
 
+		fmt.Println(sql)
 		rows, err := db.con.QueryContext(ctx, sql)
 		if err != nil {
 			return list, err

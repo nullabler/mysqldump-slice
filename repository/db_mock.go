@@ -103,7 +103,7 @@ func (db *DbMockWrapper) PrimaryKeys(key string) ([]string, error) {
 	return mock.strList, mock.err
 }
 
-func (db *DbMockWrapper) LoadIds(key string, b bool, s Specs, l []string, i int) ([]*entity.Value, error) {
+func (db *DbMockWrapper) LoadIds(key string, s *Specs, l []string) ([]*entity.Value, error) {
 	mock := db.Impact("LoadIds_" + key)
 	if mock == nil {
 		return nil, nil

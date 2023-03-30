@@ -63,9 +63,9 @@ func (c *Collect) PushValList(tabName string, valList []*Value) error {
 		return nil
 	}
 
-	if !c.isValid(tabName, valList) {
-		return errors.New("ValList is not valid")
-	}
+	//if !c.isValid(tabName, valList) {
+	//return errors.New("ValList is not valid")
+	//}
 
 	for _, val := range valList {
 		if !c.IsPk(tabName, val.key) {
