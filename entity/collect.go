@@ -11,7 +11,7 @@ type CollectInterface interface {
 	AllRelList() map[string][]RelationInterface
 	RelList(string) []RelationInterface
 	PushTab(string)
-	PushValList(string, []*Value) error
+	PushValList(string, [][]*Value) error
 	Tab(string) TabInterface
 	PushPkList(string, []string)
 	PkList(string) []string
@@ -58,22 +58,24 @@ func (c *Collect) PushTab(tabName string) {
 	c.tabList[tabName] = NewTab(tabName)
 }
 
-func (c *Collect) PushValList(tabName string, valList []*Value) error {
-	if len(valList) == 0 {
+func (c *Collect) PushValList(tabName string, list [][]*Value) error {
+	if len(list) == 0 {
 		return nil
 	}
 
-	//if !c.isValid(tabName, valList) {
-	//return errors.New("ValList is not valid")
-	//}
-
-	for _, val := range valList {
-		if !c.IsPk(tabName, val.key) {
-			return errors.New("Key is not primary key; Where KEY: " + val.key + " TabName: " + tabName)
+	for _, valList := range list {
+		if !c.isValid(tabName, valList) {
+			return errors.New("ValList is not valid")
 		}
-	}
 
-	c.Tab(tabName).Push(valList)
+		for _, val := range valList {
+			if !c.IsPk(tabName, val.key) {
+				return errors.New("Key is not primary key; Where KEY: " + val.key + " TabName: " + tabName)
+			}
+		}
+
+		c.Tab(tabName).Push(valList)
+	}
 
 	return nil
 }
@@ -90,6 +92,7 @@ func (c *Collect) PkList(tabName string) []string {
 	return c.pkList[tabName]
 }
 
+// валидно если все pk таблицы присутсутвуют в valList
 func (c *Collect) isValid(tabName string, valList []*Value) bool {
 	for _, pk := range c.PkList(tabName) {
 		flag := false
@@ -107,6 +110,7 @@ func (c *Collect) isValid(tabName string, valList []*Value) bool {
 	return true
 }
 
+// является ли колонка PK это таблицы
 func (c *Collect) IsPk(tabName, tabCol string) bool {
 	for _, pk := range c.PkList(tabName) {
 		if pk == tabCol {

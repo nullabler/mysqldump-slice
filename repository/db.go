@@ -14,7 +14,7 @@ type DbInterface interface {
 	LoadRelations(entity.CollectInterface) error
 	LoadTables(entity.CollectInterface) error
 	PrimaryKeys(string) ([]string, error)
-	LoadIds(string, *Specs, []string) ([]*entity.Value, error)
+	LoadIds(string, *Specs, []string) ([][]*entity.Value, error)
 	LoadDeps(string, string, entity.RelationInterface) ([]string, error)
 	LoadPkByCol(string, string, []string, []string) ([]*entity.Value, error)
 
@@ -130,6 +130,7 @@ func (db *Db) PrimaryKeys(tabName string) ([]string, error) {
 		db.Sql().QueryPrimaryKeys(),
 		tabName,
 		"PRIMARY",
+		db.conf.DbName(),
 	)
 	if err != nil {
 		return keyList, err
@@ -147,37 +148,29 @@ func (db *Db) PrimaryKeys(tabName string) ([]string, error) {
 	return keyList, nil
 }
 
-func (db *Db) LoadIds(tabName string, specs *Specs, prKeyList []string) ([]*entity.Value, error) {
+func (db *Db) LoadIds(tabName string, specs *Specs, prKeyList []string) ([][]*entity.Value, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
-	list := []*entity.Value{}
-	for _, key := range prKeyList {
-		sql, errSql := db.Sql().QueryLoadIds(tabName, specs, prKeyList)
-		if errSql != nil {
-			return list, errSql
-		}
+	list := [][]*entity.Value{}
+	sql, errSql := db.Sql().QueryLoadIds(tabName, specs, prKeyList)
+	if errSql != nil {
+		return list, errSql
+	}
 
-		fmt.Println(sql)
-		rows, err := db.con.QueryContext(ctx, sql)
+	rows, err := db.con.QueryContext(ctx, sql)
+	if err != nil {
+		return list, err
+	}
+
+	for rows.Next() {
+		valList, err := db.Scan(rows, prKeyList)
 		if err != nil {
 			return list, err
 		}
 
-		IsIntByCol, err := db.IsIntByCol(tabName, key)
-		if err != nil {
-			return list, err
-		}
-
-		for rows.Next() {
-			val, err := db.toString(rows, IsIntByCol)
-			if err != nil {
-				return list, err
-			}
-
-			if len(val) > 0 {
-				list = append(list, entity.NewValue(key, val))
-			}
+		if len(valList) > 0 {
+			list = append(list, valList)
 		}
 	}
 
@@ -262,6 +255,28 @@ func (db *Db) LoadPkByCol(tabName, tabCol string, pkList, valList []string) ([]*
 
 func (db *Db) Sql() SqlInterface {
 	return db.sql
+}
+
+func (db *Db) Scan(rows *sql.Rows, fields []string) ([]*entity.Value, error) {
+	length := len(fields)
+	list := []*entity.Value{}
+
+	buf := make([]interface{}, length)
+	for i := range fields {
+		buf[i] = new(sql.RawBytes)
+	}
+
+	if err := rows.Scan(buf...); err != nil {
+		return list, err
+	}
+
+	for i := 0; i < length; i++ {
+		if v, ok := buf[i].(*sql.RawBytes); ok {
+			list = append(list, entity.NewValue(fields[i], string(*v)))
+		}
+	}
+
+	return list, nil
 }
 
 func (db *Db) toString(rows *sql.Rows, isInt bool) (string, error) {

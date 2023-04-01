@@ -60,12 +60,12 @@ func (l *Loader) Tables(collect entity.CollectInterface) error {
 
 		collect.PushPkList(table.Name, prKeyList)
 
-		valList, err := l.db.LoadIds(table.Name, &specs, prKeyList)
+		list, err := l.db.LoadIds(table.Name, &specs, prKeyList)
 		if err != nil {
 			return err
 		}
 
-		if err := collect.PushValList(table.Name, valList); err != nil {
+		if err := collect.PushValList(table.Name, list); err != nil {
 			return err
 		}
 
@@ -108,45 +108,45 @@ func (l *Loader) Weight(collect entity.CollectInterface) error {
 }
 
 func (l *Loader) Dependences(collect entity.CollectInterface, rel entity.RelationInterface, tabName string, rows []*entity.Row) error {
-	for _, where := range l.db.Sql().WhereSlice(rows, false) {
-		list, err := l.db.LoadDeps(tabName, where, rel)
-		if err != nil {
-			return err
-		}
+	//for _, where := range l.db.Sql().WhereSlice(rows, false) {
+	//list, err := l.db.LoadDeps(tabName, where, rel)
+	//if err != nil {
+	//return err
+	//}
 
-		if !collect.IsPk(rel.RefTab(), rel.RefCol()) {
-			valList, err := l.db.LoadPkByCol(rel.RefTab(), rel.RefCol(), collect.PkList(tabName), list)
-			if err != nil {
-				return err
-			}
+	//if !collect.IsPk(rel.RefTab(), rel.RefCol()) {
+	//valList, err := l.db.LoadPkByCol(rel.RefTab(), rel.RefCol(), collect.PkList(tabName), list)
+	//if err != nil {
+	//return err
+	//}
 
-			if err := collect.PushValList(rel.RefTab(), valList); err != nil {
-				return err
-			}
-			//for col, list := range pkList {
-			//collect.PushValList(rel.RefTab(), col, list)
-			//}
-		} else {
-			if len(collect.PkList(tabName)) > 1 {
-				valList, err := l.db.LoadPkByCol(rel.RefTab(), rel.RefCol(), collect.PkList(tabName), list)
-				if err != nil {
-					return err
-				}
+	//if err := collect.PushValList(rel.RefTab(), valList); err != nil {
+	//return err
+	//}
+	////for col, list := range pkList {
+	////collect.PushValList(rel.RefTab(), col, list)
+	////}
+	//} else {
+	//if len(collect.PkList(tabName)) > 1 {
+	//valList, err := l.db.LoadPkByCol(rel.RefTab(), rel.RefCol(), collect.PkList(tabName), list)
+	//if err != nil {
+	//return err
+	//}
 
-				if err := collect.PushValList(rel.RefTab(), valList); err != nil {
-					return err
-				}
-			} else {
-				valList := []*entity.Value{}
-				for _, v := range list {
-					valList = append(valList, entity.NewValue(rel.RefCol(), v))
-				}
-				if err := collect.PushValList(rel.RefTab(), valList); err != nil {
-					return err
-				}
-			}
-		}
-	}
+	//if err := collect.PushValList(rel.RefTab(), valList); err != nil {
+	//return err
+	//}
+	//} else {
+	//valList := []*entity.Value{}
+	//for _, v := range list {
+	//valList = append(valList, entity.NewValue(rel.RefCol(), v))
+	//}
+	//if err := collect.PushValList(rel.RefTab(), valList); err != nil {
+	//return err
+	//}
+	//}
+	//}
+	//}
 
 	return nil
 }

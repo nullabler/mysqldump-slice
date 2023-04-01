@@ -89,7 +89,8 @@ func (s *Sql) QueryPrimaryKeys() string {
 	return `SELECT COLUMN_NAME 
 		FROM information_schema.KEY_COLUMN_USAGE 
 		WHERE TABLE_NAME = ? 
-		AND CONSTRAINT_NAME = ?`
+		AND CONSTRAINT_NAME = ? 
+		AND CONSTRAINT_SCHEMA = ?`
 }
 
 func (s *Sql) QueryIsIntByCol() string {
@@ -107,7 +108,7 @@ func (s *Sql) QueryLoadIds(tabName string, specs *Specs, prKeyList []string) (st
 
 	fields, sort := s.fieldsAndSort(prKeyList, specs)
 
-	return fmt.Sprintf("SELECT %s FROM `%s` %s ORDER BY %s DESC %s",
+	return fmt.Sprintf("SELECT %s FROM `%s`%s ORDER BY %s DESC %s",
 		fields,
 		tabName,
 		s.condition(specs),
@@ -131,7 +132,7 @@ func (s *Sql) fieldsAndSort(prKeyList []string, specs *Specs) (string, string) {
 
 func (s *Sql) condition(specs *Specs) string {
 	if specs != nil && len(specs.Condition) > 0 {
-		return fmt.Sprintf("WHERE %w", specs.Condition)
+		return fmt.Sprintf(" WHERE %s", specs.Condition)
 	}
 
 	return ""
@@ -147,7 +148,7 @@ func (s *Sql) limit(tabName string, specs *Specs) string {
 		limit = specs.Limit
 	}
 
-	return fmt.Sprintln("LIMIT %d", limit)
+	return fmt.Sprintf("LIMIT %d", limit)
 }
 
 func (s *Sql) QueryLoadDeps(col, tabName, where, limit string) string {
