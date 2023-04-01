@@ -60,7 +60,7 @@ func TestTables(t *testing.T) {
 
 	if len(collect.PkList("user")) != 1 ||
 		len(collect.PkList("product")) != 1 ||
-		len(collect.PkList("category")) != 2 {
+		len(collect.PkList("category")) != 1 {
 		t.Error("Fail contains pkList for User tab")
 	}
 
@@ -68,7 +68,28 @@ func TestTables(t *testing.T) {
 		t.Error("Fail pkList for broken tab")
 	}
 
-	fmt.Println(len(collect.Tab("user").Rows()), len(collect.Tab("product").Rows()))
+	if len(collect.Tab("user").Rows()) != 2 ||
+		len(collect.Tab("product").Rows()) != 4 ||
+		len(collect.Tab("category").Rows()) != 1 {
+		t.Error("Fail incorrect load valList")
+	}
+}
+
+func TestLoadRelationsForLeader(t *testing.T) {
+	conf := &repository.Conf{}
+
+	confDbMock := repository.ConfDbMock{}
+	repository.FillPrimaryKeys(confDbMock)
+	repository.FillValList(confDbMock)
+
+	l := getLoader(conf, confDbMock)
+
+	collect := entity.NewCollect()
+	entity.FillTables(collect)
+	entity.FillAllRelList(collect)
+
+	fmt.Println(collect.AllRelList())
+	l.LoadRelationsForLeader(collect)
 }
 
 func getLoader(conf *repository.Conf, confDbMock repository.ConfDbMock) *Loader {

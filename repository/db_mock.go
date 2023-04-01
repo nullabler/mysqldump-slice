@@ -9,7 +9,7 @@ import (
 type DbMock struct {
 	flag    bool
 	err     error
-	valList []*entity.Value
+	valList [][]*entity.Value
 	strList []string
 }
 
@@ -26,7 +26,7 @@ func (d *DbMock) Err(msg string) {
 }
 
 func (d *DbMock) ValList(valList []*entity.Value) {
-	d.valList = valList
+	d.valList = append(d.valList, valList)
 }
 
 func (d *DbMock) StrList(strList []string) {
@@ -103,7 +103,7 @@ func (db *DbMockWrapper) PrimaryKeys(key string) ([]string, error) {
 	return mock.strList, mock.err
 }
 
-func (db *DbMockWrapper) LoadIds(key string, s *Specs, l []string) ([]*entity.Value, error) {
+func (db *DbMockWrapper) LoadIds(key string, s *Specs, l []string) ([][]*entity.Value, error) {
 	mock := db.Impact("LoadIds_" + key)
 	if mock == nil {
 		return nil, nil
@@ -121,7 +121,7 @@ func (db *DbMockWrapper) LoadDeps(string, string, entity.RelationInterface) ([]s
 	return mock.strList, mock.err
 }
 
-func (db *DbMockWrapper) LoadPkByCol(string, string, []string, []string) ([]*entity.Value, error) {
+func (db *DbMockWrapper) LoadPkByCol(string, string, []string, []string) ([][]*entity.Value, error) {
 	mock := db.Impact("LoadPkByCol")
 	if mock == nil {
 		return nil, nil

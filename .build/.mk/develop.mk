@@ -7,7 +7,7 @@ fmt: ## run gofmt [make fmt]
 	gofmt -w .
 
 test: ## run go test [make test]
-	go test ./repository/ ./entity/ -v
+	go test ./repository/ ./entity/ ./service/ -v
 
 dev: ## run development watching [make dev]
 	watch go test ./service/ -v

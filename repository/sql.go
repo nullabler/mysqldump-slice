@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"errors"
 	"fmt"
 	"mysqldump-slice/entity"
 	"strings"
@@ -17,7 +16,7 @@ type SqlInterface interface {
 	QueryIsIntByCol() string
 	QueryLoadIds(string, *Specs, []string) (string, error)
 	QueryLoadDeps(string, string, string, string) string
-	QueryLoadPkByCol(string, string, string, []string) string
+	QueryLoadPkByCol([]string, string, string, []string) string
 }
 
 type Sql struct {
@@ -45,8 +44,8 @@ func (s *Sql) Where(rowList []*entity.Row, isEscape bool) []string {
 	return where
 }
 
-func (s *Sql) WhereSlice(rowList []*entity.Row, isEscaape bool) (chunks []string) {
-	whereList := s.Where(rowList, isEscaape)
+func (s *Sql) WhereSlice(rowList []*entity.Row, isEscape bool) (chunks []string) {
+	whereList := s.Where(rowList, isEscape)
 	lenWhereList := len(whereList)
 
 	for i := 0; i < lenWhereList; i += s.conf.LimitCli {
@@ -101,15 +100,15 @@ func (s *Sql) QueryIsIntByCol() string {
 		AND column_name = ?;`
 }
 
-func (s *Sql) QueryLoadIds(tabName string, specs *Specs, prKeyList []string) (string, error) {
-	if len(prKeyList) == 0 {
-		return "", errors.New(fmt.Sprintf("Empty PrimaryKeyList for TabName: %s", tabName))
+func (s *Sql) QueryLoadIds(tabName string, specs *Specs, pkList []string) (string, error) {
+	if len(pkList) == 0 {
+		return "", fmt.Errorf("Empty PrimaryKeyList for TabName: %s", tabName)
 	}
 
-	fields, sort := s.fieldsAndSort(prKeyList, specs)
+	sort := s.sort(pkList, specs)
 
 	return fmt.Sprintf("SELECT %s FROM `%s`%s ORDER BY %s DESC %s",
-		fields,
+		s.wrapAndJoin(pkList),
 		tabName,
 		s.condition(specs),
 		sort,
@@ -117,17 +116,16 @@ func (s *Sql) QueryLoadIds(tabName string, specs *Specs, prKeyList []string) (st
 	), nil
 }
 
-func (s *Sql) fieldsAndSort(prKeyList []string, specs *Specs) (string, string) {
-	fields := strings.Join(s.wrapKeys(prKeyList, "`"), ", ")
-
-	var sort string
+func (s *Sql) sort(fields []string, specs *Specs) string {
 	if specs != nil && len(specs.Sort) > 0 {
-		sort = strings.Join(s.wrapKeys(specs.Sort, "`"), ", ")
-	} else {
-		sort = fields
+		fields = specs.Sort
 	}
 
-	return fields, sort
+	return s.wrapAndJoin(fields)
+}
+
+func (s *Sql) wrapAndJoin(fields []string) string {
+	return strings.Join(s.wrapKeys(fields, "`"), ", ")
 }
 
 func (s *Sql) condition(specs *Specs) string {
@@ -160,9 +158,9 @@ func (s *Sql) QueryLoadDeps(col, tabName, where, limit string) string {
 	)
 }
 
-func (s *Sql) QueryLoadPkByCol(key, tabName, tabCol string, valList []string) string {
-	return fmt.Sprintf("SELECT `%s` FROM `%s` WHERE `%s` IN (%s)",
-		key, tabName, tabCol, strings.Join(valList, ", "))
+func (s *Sql) QueryLoadPkByCol(keyList []string, tabName, tabCol string, valList []string) string {
+	return fmt.Sprintf("SELECT %s FROM `%s` WHERE `%s` IN (%s)",
+		s.wrapAndJoin(keyList), tabName, tabCol, strings.Join(valList, ", "))
 }
 
 func (s *Sql) wrapKeys(keys []string, wrapSym string) (list []string) {

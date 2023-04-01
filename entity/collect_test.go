@@ -8,10 +8,15 @@ func TestPushValListSuccess(t *testing.T) {
 	c := NewCollect()
 	c.PushPkList("test", []string{"uuid", "ulid"})
 
-	valList := []*Value{
-		NewValue("uuid", "4"),
-		NewValue("ulid", "9"),
-	}
+	valList := [][]*Value{}
+	valList = append(valList, []*Value{
+		NewValue("uuid", "xxxx-yyyy-0001"),
+		NewValue("ulid", "dddd-cccc-0001"),
+	})
+	valList = append(valList, []*Value{
+		NewValue("uuid", "xxxx-yyyy-0004"),
+		NewValue("ulid", "dddd-cccc-0008"),
+	})
 
 	if c.Tab("test") != nil {
 		t.Error("TabList should be nil")
@@ -22,8 +27,8 @@ func TestPushValListSuccess(t *testing.T) {
 		t.Error("TabList is nil after PushTab")
 	}
 
-	if er := c.PushValList("test", valList); er != nil {
-		t.Error("Fail push valList to collect")
+	if err := c.PushValList("test", valList); err != nil {
+		t.Error("Fail push valList to collect ")
 	}
 }
 
@@ -31,9 +36,8 @@ func TestPushValListFail(t *testing.T) {
 	c := NewCollect()
 	c.PushPkList("test", []string{"uuid", "ulid"})
 
-	valList := []*Value{
-		NewValue("uuid", "4"),
-	}
+	valList := [][]*Value{}
+	valList = append(valList, []*Value{NewValue("uuid", "4")})
 
 	if c.Tab("test") != nil {
 		t.Error("TabList should be nil")

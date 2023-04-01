@@ -80,16 +80,13 @@ func TestQueryLoadIds(t *testing.T) {
 	c := &Conf{}
 	s := NewSql(c)
 
-	specs := Specs{}
+	specs := new(Specs)
 	prKeyList := []string{}
 
 	_, err := s.QueryLoadIds(
-		"cat_id",
 		"user",
-		false,
 		specs,
 		prKeyList,
-		2,
 	)
 
 	if err == nil {
@@ -97,14 +94,11 @@ func TestQueryLoadIds(t *testing.T) {
 	}
 
 	prKeyList = []string{"id"}
-	exp := "SELECT `cat_id` FROM `user`  ORDER BY `id` DESC LIMIT 2"
+	exp := "SELECT `id` FROM `user` ORDER BY `id` DESC LIMIT 0"
 	got, er := s.QueryLoadIds(
-		"cat_id",
 		"user",
-		true,
 		specs,
 		prKeyList,
-		2,
 	)
 	if er != nil {
 		t.Error(er)
@@ -114,20 +108,17 @@ func TestQueryLoadIds(t *testing.T) {
 		t.Errorf("Fail for QueryLoadIds Exp: %s Got: %s", exp, got)
 	}
 
-	specs = Specs{
+	specs = &Specs{
 		Condition: "`updated_at` > NOW()",
 		Sort:      []string{"updated_at", "created_at"},
 		Limit:     3,
 	}
 
-	exp = "SELECT `cat_id` FROM `user` WHERE `updated_at` > NOW() ORDER BY `updated_at`, `created_at` DESC LIMIT 3"
+	exp = "SELECT `id` FROM `user` WHERE `updated_at` > NOW() ORDER BY `updated_at`, `created_at` DESC LIMIT 3"
 	got, er = s.QueryLoadIds(
-		"cat_id",
 		"user",
-		true,
 		specs,
 		prKeyList,
-		2,
 	)
 	if er != nil {
 		t.Error(er)
