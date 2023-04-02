@@ -160,7 +160,7 @@ func (s *Sql) QueryLoadDeps(col, tabName, where, limit string) string {
 
 func (s *Sql) QueryLoadPkByCol(keyList []string, tabName, tabCol string, valList []string) string {
 	return fmt.Sprintf("SELECT %s FROM `%s` WHERE `%s` IN (%s)",
-		s.wrapAndJoin(keyList), tabName, tabCol, strings.Join(valList, ", "))
+		s.wrapAndJoin(keyList), tabName, tabCol, strings.Join(s.wrapKeys(valList, "'"), ", "))
 }
 
 func (s *Sql) wrapKeys(keys []string, wrapSym string) (list []string) {

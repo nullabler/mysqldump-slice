@@ -4,13 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"mysqldump-slice/entity"
 	"time"
 )
 
 type DbInterface interface {
 	Close()
-	IsIntByCol(string, string) (bool, error)
+	//IsIntByCol(string, string) (bool, error)
 	LoadRelations(entity.CollectInterface) error
 	LoadTables(entity.CollectInterface) error
 	PrimaryKeys(string) ([]string, error)
@@ -58,27 +59,29 @@ func (db *Db) Close() {
 	db.con.Close()
 }
 
-func (db *Db) IsIntByCol(tab, col string) (bool, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
-	defer cancel()
+//func (db *Db) IsIntByCol(tab, col string) (bool, error) {
+//ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
+//defer cancel()
 
-	var typeCol string
-	if err := db.con.QueryRowContext(ctx, db.Sql().QueryIsIntByCol(), db.name, tab, col).Scan(&typeCol); err != nil {
-		return false, err
-	}
+//var typeCol string
+//if err := db.con.QueryRowContext(ctx, db.Sql().QueryIsIntByCol(), db.name, tab, col).Scan(&typeCol); err != nil {
+//return false, err
+//}
 
-	if typeCol == "int" {
-		return true, nil
-	}
+//if typeCol == "int" {
+//return true, nil
+//}
 
-	return false, nil
-}
+//return false, nil
+//}
 
 func (db *Db) LoadRelations(collect entity.CollectInterface) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
-	rows, err := db.con.QueryContext(ctx, db.Sql().QueryRelations(), db.name)
+	sql := db.Sql().QueryRelations()
+	db.debug("LoadRelations", sql)
+	rows, err := db.con.QueryContext(ctx, sql, db.name)
 	if err != nil {
 		return err
 	}
@@ -99,7 +102,9 @@ func (db *Db) LoadTables(collect entity.CollectInterface) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
-	rows, err := db.con.QueryContext(ctx, db.Sql().QueryFullTables(db.name))
+	sql := db.Sql().QueryFullTables(db.name)
+	db.debug("LoadTables", sql)
+	rows, err := db.con.QueryContext(ctx, sql)
 	if err != nil {
 		return err
 	}
@@ -126,8 +131,10 @@ func (db *Db) PrimaryKeys(tabName string) ([]string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
+	sql := db.Sql().QueryPrimaryKeys()
+	db.debug("PrimaryKeys", sql)
 	rows, err := db.con.QueryContext(ctx,
-		db.Sql().QueryPrimaryKeys(),
+		sql,
 		tabName,
 		"PRIMARY",
 		db.conf.DbName(),
@@ -154,6 +161,7 @@ func (db *Db) LoadIds(tabName string, specs *Specs, prKeyList []string) ([][]*en
 
 	list := [][]*entity.Value{}
 	sql, errSql := db.Sql().QueryLoadIds(tabName, specs, prKeyList)
+	db.debug("LoadIds", sql)
 	if errSql != nil {
 		return list, errSql
 	}
@@ -186,20 +194,23 @@ func (db *Db) LoadDeps(tabName, where string, rel entity.RelationInterface) (lis
 		limit = fmt.Sprintf("LIMIT %d", rel.Limit())
 	}
 
-	rows, err := db.con.QueryContext(ctx, db.Sql().QueryLoadDeps(
+	sql := db.Sql().QueryLoadDeps(
 		rel.Col(),
 		tabName,
 		where,
 		limit,
-	))
+	)
+	db.debug("LoadDeps", sql)
+	rows, err := db.con.QueryContext(ctx, sql)
+
 	if err != nil {
 		return
 	}
 
-	isIntDep, err := db.IsIntByCol(tabName, rel.Col())
-	if err != nil {
-		return
-	}
+	//isIntDep, err := db.IsIntByCol(tabName, rel.Col())
+	//if err != nil {
+	//return
+	//}
 
 	for rows.Next() {
 		val, err := db.singleScan(rows)
@@ -207,11 +218,16 @@ func (db *Db) LoadDeps(tabName, where string, rel entity.RelationInterface) (lis
 			break
 		}
 
-		if !isIntDep {
-			val = fmt.Sprintf("'%s'", val)
-		}
+		//if !isIntDep {
+		//val = fmt.Sprintf("'%s'", val)
+		//}
 
 		if len(val) > 0 {
+			for _, item := range list {
+				if item == val {
+					return list, nil
+				}
+			}
 			list = append(list, val)
 		}
 	}
@@ -224,7 +240,10 @@ func (db *Db) LoadPkByCol(tabName, tabCol string, pkList, valList []string) ([][
 	defer cancel()
 
 	list := [][]*entity.Value{}
-	rows, err := db.con.QueryContext(ctx, db.Sql().QueryLoadPkByCol(pkList, tabName, tabCol, valList))
+	sql := db.Sql().QueryLoadPkByCol(pkList, tabName, tabCol, valList)
+	db.debug("LoadPkByCol", sql)
+	rows, err := db.con.QueryContext(ctx, sql)
+
 	if err != nil {
 		return list, err
 	}
@@ -276,4 +295,10 @@ func (db *Db) singleScan(rows *sql.Rows) (string, error) {
 	}
 
 	return string(*buf), nil
+}
+
+func (db *Db) debug(key string, data ...interface{}) {
+	if db.conf.Debug {
+		log.Printf("Debug[%s]: %+v\n", key, data)
+	}
 }

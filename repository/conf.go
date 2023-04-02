@@ -19,6 +19,7 @@ type Conf struct {
 	MaxLifetimeConnectMinute int  `yaml:"max-lifetime-connect-minute"`
 	MaxLifetimeQuerySecond   int  `yaml:"max-lifetime-query-second"`
 	Log                      bool `yaml:"log"`
+	Debug                    bool
 
 	File   File   `yaml:"filename"`
 	Tables Tables `yaml:"tables"`
@@ -70,6 +71,7 @@ type Fk struct {
 
 func NewConf(pathToFile, tmpFilename string) (*Conf, error) {
 	conf := &Conf{
+		Debug:    false,
 		shell:    "/bin/sh",
 		Tmp:      tmpFilename,
 		LimitCli: 30,

@@ -53,6 +53,12 @@ func (l *Log) Dump(data ...interface{}) {
 	log.Printf("%+v\n", data)
 }
 
+func (l *Log) Debug(data ...interface{}) {
+	if l.conf.Debug {
+		l.Dump(data)
+	}
+}
+
 func (l *Log) State(filename string) {
 	f, err := os.Stat(filename)
 	if err != nil {

@@ -123,6 +123,7 @@ func (l *Loader) Dependences(collect entity.CollectInterface, rel entity.Relatio
 
 				valList = append(valList, t)
 			}
+
 			if err := collect.PushValList(rel.RefTab(), valList); err != nil {
 				return err
 			}
@@ -130,7 +131,7 @@ func (l *Loader) Dependences(collect entity.CollectInterface, rel entity.Relatio
 			continue
 		}
 
-		valList, err := l.db.LoadPkByCol(rel.RefTab(), rel.RefCol(), collect.PkList(tabName), list)
+		valList, err := l.db.LoadPkByCol(rel.RefTab(), rel.RefCol(), collect.PkList(rel.RefTab()), list)
 		if err != nil {
 			return err
 		}
