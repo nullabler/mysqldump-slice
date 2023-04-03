@@ -11,7 +11,6 @@ import (
 
 type DbInterface interface {
 	Close()
-	//IsIntByCol(string, string) (bool, error)
 	LoadRelations(entity.CollectInterface) error
 	LoadTables(entity.CollectInterface) error
 	PrimaryKeys(string) ([]string, error)
@@ -59,22 +58,6 @@ func (db *Db) Close() {
 	db.con.Close()
 }
 
-//func (db *Db) IsIntByCol(tab, col string) (bool, error) {
-//ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
-//defer cancel()
-
-//var typeCol string
-//if err := db.con.QueryRowContext(ctx, db.Sql().QueryIsIntByCol(), db.name, tab, col).Scan(&typeCol); err != nil {
-//return false, err
-//}
-
-//if typeCol == "int" {
-//return true, nil
-//}
-
-//return false, nil
-//}
-
 func (db *Db) LoadRelations(collect entity.CollectInterface) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
@@ -82,6 +65,7 @@ func (db *Db) LoadRelations(collect entity.CollectInterface) error {
 	sql := db.Sql().QueryRelations()
 	db.debug("LoadRelations", sql)
 	rows, err := db.con.QueryContext(ctx, sql, db.name)
+
 	if err != nil {
 		return err
 	}
@@ -105,6 +89,7 @@ func (db *Db) LoadTables(collect entity.CollectInterface) error {
 	sql := db.Sql().QueryFullTables(db.name)
 	db.debug("LoadTables", sql)
 	rows, err := db.con.QueryContext(ctx, sql)
+
 	if err != nil {
 		return err
 	}
@@ -115,7 +100,7 @@ func (db *Db) LoadTables(collect entity.CollectInterface) error {
 			return err
 		}
 
-		if tabType != "BASE TABLE" || db.conf.IsIgnore(tabName) {
+		if tabType != "BASE TABLE" {
 			continue
 		}
 
@@ -139,6 +124,7 @@ func (db *Db) PrimaryKeys(tabName string) ([]string, error) {
 		"PRIMARY",
 		db.conf.DbName(),
 	)
+
 	if err != nil {
 		return keyList, err
 	}
@@ -162,6 +148,7 @@ func (db *Db) LoadIds(tabName string, specs *Specs, prKeyList []string) ([][]*en
 	list := [][]*entity.Value{}
 	sql, errSql := db.Sql().QueryLoadIds(tabName, specs, prKeyList)
 	db.debug("LoadIds", sql)
+
 	if errSql != nil {
 		return list, errSql
 	}
@@ -207,20 +194,11 @@ func (db *Db) LoadDeps(tabName, where string, rel entity.RelationInterface) (lis
 		return
 	}
 
-	//isIntDep, err := db.IsIntByCol(tabName, rel.Col())
-	//if err != nil {
-	//return
-	//}
-
 	for rows.Next() {
 		val, err := db.singleScan(rows)
 		if err != nil {
 			break
 		}
-
-		//if !isIntDep {
-		//val = fmt.Sprintf("'%s'", val)
-		//}
 
 		if len(val) > 0 {
 			for _, item := range list {

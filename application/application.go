@@ -95,6 +95,8 @@ func (app *App) runSlice(collect *entity.Collect) {
 				isLoop = true
 			}
 
+			app.log.Infof("- %s......Loading", table.Name)
+
 			for _, rel := range collect.RelList(table.Name) {
 				if err := app.loader.Dependences(collect, rel, table.Name, rows); err != nil {
 					app.log.Error(err)
@@ -104,6 +106,8 @@ func (app *App) runSlice(collect *entity.Collect) {
 			if err := app.dumper.Slice(collect, table.Name, rows); err != nil {
 				app.log.Error(err)
 			}
+
+			app.log.Infof("- %s......Done", table.Name)
 		}
 	}
 }

@@ -16,7 +16,6 @@ type CollectInterface interface {
 	PushPkList(string, []string)
 	PkList(string) []string
 	IsPk(string, string) bool
-	isValid(tabName string, valList []*Value) bool
 }
 
 type Collect struct {
@@ -64,10 +63,6 @@ func (c *Collect) PushValList(tabName string, list [][]*Value) error {
 	}
 
 	for _, valList := range list {
-		if !c.isValid(tabName, valList) {
-			return errors.New("ValList is not valid")
-		}
-
 		for _, val := range valList {
 			if !c.IsPk(tabName, val.key) {
 				return errors.New("Key is not primary key; Where KEY: " + val.key + " TabName: " + tabName)
@@ -92,25 +87,6 @@ func (c *Collect) PkList(tabName string) []string {
 	return c.pkList[tabName]
 }
 
-// валидно если все pk таблицы присутсутвуют в valList
-func (c *Collect) isValid(tabName string, valList []*Value) bool {
-	for _, pk := range c.PkList(tabName) {
-		flag := false
-		for _, val := range valList {
-			if val.key == pk {
-				flag = true
-			}
-		}
-
-		if !flag {
-			return false
-		}
-	}
-
-	return true
-}
-
-// является ли колонка PK это таблицы
 func (c *Collect) IsPk(tabName, tabCol string) bool {
 	for _, pk := range c.PkList(tabName) {
 		if pk == tabCol {

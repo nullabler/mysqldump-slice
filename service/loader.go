@@ -60,6 +60,10 @@ func (l *Loader) Tables(collect entity.CollectInterface) error {
 
 		collect.PushPkList(table.Name, prKeyList)
 
+		if l.conf.IsIgnore(table.Name) {
+			continue
+		}
+
 		list, err := l.db.LoadIds(table.Name, &specs, prKeyList)
 		if err != nil {
 			return err
@@ -112,6 +116,10 @@ func (l *Loader) Dependences(collect entity.CollectInterface, rel entity.Relatio
 		list, err := l.db.LoadDeps(tabName, where, rel)
 		if err != nil {
 			return err
+		}
+
+		if len(list) == 0 {
+			continue
 		}
 
 		if collect.IsPk(rel.RefTab(), rel.RefCol()) && len(collect.PkList(tabName)) == 1 {

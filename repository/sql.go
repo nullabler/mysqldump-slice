@@ -44,7 +44,57 @@ func (s *Sql) Where(rowList []*entity.Row, isEscape bool) []string {
 	return where
 }
 
+func (s *Sql) WhereSliceForSingleKey(rowList []*entity.Row, isEscape bool) ([]string, bool) {
+	chunks := []string{}
+	key := ""
+	values := []string{}
+
+	for i, row := range rowList {
+		for j, val := range row.ValList() {
+			if i == 0 && j == 0 {
+				key = val.Key()
+			} else if key != val.Key() {
+				return chunks, false
+			}
+
+			v := val.Val(true)
+			isUniq := true
+			for _, item := range values {
+				if item == v {
+					isUniq = false
+				}
+			}
+
+			if isUniq {
+				values = append(values, val.Val(true))
+			}
+		}
+	}
+
+	pattern := "`%s` IN (%s)"
+	if isEscape {
+		pattern = "\\`%s\\` IN (%s)"
+	}
+
+	lenValues := len(values)
+	for i := 0; i < lenValues; i += s.conf.LimitCli {
+		end := i + s.conf.LimitCli
+
+		if end > lenValues {
+			end = lenValues
+		}
+
+		chunks = append(chunks, fmt.Sprintf(pattern, key, strings.Join(values[i:end], ", ")))
+	}
+
+	return chunks, true
+}
+
 func (s *Sql) WhereSlice(rowList []*entity.Row, isEscape bool) (chunks []string) {
+	if ch, ok := s.WhereSliceForSingleKey(rowList, isEscape); ok {
+		return ch
+	}
+
 	whereList := s.Where(rowList, isEscape)
 	lenWhereList := len(whereList)
 
@@ -116,12 +166,34 @@ func (s *Sql) QueryLoadIds(tabName string, specs *Specs, pkList []string) (strin
 	), nil
 }
 
+func (s *Sql) QueryLoadDeps(col, tabName, where, limit string) string {
+	return fmt.Sprintf("SELECT `%s` FROM `%s` WHERE %s %s",
+		col,
+		tabName,
+		where,
+		limit,
+	)
+}
+
+func (s *Sql) QueryLoadPkByCol(keyList []string, tabName, tabCol string, valList []string) string {
+	return fmt.Sprintf("SELECT %s FROM `%s` WHERE `%s` IN (%s)",
+		s.wrapAndJoin(keyList), tabName, tabCol, strings.Join(s.wrapKeys(valList, "'"), ", "))
+}
+
 func (s *Sql) sort(fields []string, specs *Specs) string {
 	if specs != nil && len(specs.Sort) > 0 {
 		fields = specs.Sort
 	}
 
 	return s.wrapAndJoin(fields)
+}
+
+func (s *Sql) wrapKeys(keys []string, wrapSym string) (list []string) {
+	for _, key := range keys {
+		list = append(list, wrapSym+key+wrapSym)
+	}
+
+	return
 }
 
 func (s *Sql) wrapAndJoin(fields []string) string {
@@ -147,26 +219,4 @@ func (s *Sql) limit(tabName string, specs *Specs) string {
 	}
 
 	return fmt.Sprintf("LIMIT %d", limit)
-}
-
-func (s *Sql) QueryLoadDeps(col, tabName, where, limit string) string {
-	return fmt.Sprintf("SELECT `%s` FROM `%s` WHERE %s %s",
-		col,
-		tabName,
-		where,
-		limit,
-	)
-}
-
-func (s *Sql) QueryLoadPkByCol(keyList []string, tabName, tabCol string, valList []string) string {
-	return fmt.Sprintf("SELECT %s FROM `%s` WHERE `%s` IN (%s)",
-		s.wrapAndJoin(keyList), tabName, tabCol, strings.Join(s.wrapKeys(valList, "'"), ", "))
-}
-
-func (s *Sql) wrapKeys(keys []string, wrapSym string) (list []string) {
-	for _, key := range keys {
-		list = append(list, wrapSym+key+wrapSym)
-	}
-
-	return
 }

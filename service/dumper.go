@@ -58,7 +58,6 @@ func (d *Dumper) Slice(collect entity.CollectInterface, tabName string, rows []*
 			}
 		}
 	}
-	d.log.Infof("- %s......Done", tabName)
 
 	return nil
 }
