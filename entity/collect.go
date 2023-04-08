@@ -1,21 +1,17 @@
 package entity
 
-import (
-	"errors"
-)
-
 type CollectInterface interface {
-	PushTable(string)
+	PushTable(tabName string)
 	Tables() TableList
-	PushRelation(RelationInterface)
+	PushRelation(rel RelationInterface)
 	AllRelList() map[string][]RelationInterface
-	RelList(string) []RelationInterface
-	PushTab(string)
-	PushValList(string, [][]*Value) error
-	Tab(string) TabInterface
-	PushPkList(string, []string)
-	PkList(string) []string
-	IsPk(string, string) bool
+	RelList(tabName string) []RelationInterface
+	PushTab(tabName string)
+	PushValList(tabName string, list [][]*Value)
+	Tab(tabName string) TabInterface
+	PushPkList(tabName string, pkList []string)
+	PkList(tabName string) []string
+	IsPk(tabName, tabCol string) bool
 }
 
 type Collect struct {
@@ -57,26 +53,18 @@ func (c *Collect) PushTab(tabName string) {
 	c.tabList[tabName] = NewTab(tabName)
 }
 
-func (c *Collect) PushValList(tabName string, list [][]*Value) error {
+func (c *Collect) PushValList(tabName string, list [][]*Value) {
 	if len(list) == 0 {
-		return nil
+		return
 	}
 
 	for _, valList := range list {
-		for _, val := range valList {
-			if !c.IsPk(tabName, val.key) {
-				return errors.New("Key is not primary key; Where KEY: " + val.key + " TabName: " + tabName)
-			}
-		}
-
 		c.Tab(tabName).Push(valList)
 	}
-
-	return nil
 }
 
-func (c *Collect) Tab(tab string) TabInterface {
-	return c.tabList[tab]
+func (c *Collect) Tab(tabName string) TabInterface {
+	return c.tabList[tabName]
 }
 
 func (c *Collect) PushPkList(tabName string, pkList []string) {

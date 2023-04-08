@@ -1,10 +1,10 @@
 package entity
 
 type TabInterface interface {
-	isExist([]*Value) bool
-	isUsed([]*Value) bool
+	isExist(valList []*Value) bool
+	isUsed(valList []*Value) bool
 	Rows() []*Row
-	Push([]*Value)
+	Push(valList []*Value)
 	Pull() []*Row
 }
 
@@ -36,15 +36,10 @@ func (tab *Tab) Pull() (list []*Row) {
 
 func (tab *Tab) isExist(valList []*Value) bool {
 	for _, row := range tab.rows {
-		flag := true
 		for _, val := range row.valList {
-			if flag && !val.contains(valList) {
-				flag = false
+			if val.contains(valList) {
+				return true
 			}
-		}
-
-		if flag {
-			return true
 		}
 	}
 

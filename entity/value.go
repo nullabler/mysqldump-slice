@@ -2,7 +2,7 @@ package entity
 
 import (
 	"fmt"
-	"strings"
+	"mysqldump-slice/helper"
 )
 
 type Value struct {
@@ -41,19 +41,8 @@ func (v *Value) Key() string {
 
 func (v *Value) Val(isWrap bool) string {
 	if isWrap {
-		return fmt.Sprintf("'%s'", v.escapeVal())
+		return fmt.Sprintf("'%s'", helper.EscapeVal(v.val))
 	}
 
 	return v.val
-}
-
-func (v *Value) escapeVal() string {
-	replace := map[string]string{"\\": "\\\\", "'": `\'`, "\\0": "\\\\0", "\n": "\\n", "\r": "\\r", `"`: `\"`, "\x1a": "\\Z"}
-
-	val := v.val
-	for b, a := range replace {
-		val = strings.ReplaceAll(val, b, a)
-	}
-
-	return val
 }

@@ -12,7 +12,12 @@ type App struct {
 	loader *service.Loader
 	dumper *service.Dumper
 	log    service.LogInterface
+
+	index []string
+	pool  map[string]Callback
 }
+
+type Callback func(*entity.Collect) error
 
 func NewApp(conf *repository.Conf, db repository.DbInterface, cli repository.CliInterface) *App {
 	log := service.NewLog(conf)
@@ -21,55 +26,45 @@ func NewApp(conf *repository.Conf, db repository.DbInterface, cli repository.Cli
 		loader: service.NewLoader(conf, db, cli, log),
 		dumper: service.NewDumper(conf, cli, db, log),
 		log:    log,
+		pool:   make(map[string]Callback),
 	}
 }
 
 func (app *App) Run() {
+	app.initPool()
+
 	collect := entity.NewCollect()
-	app.log.Info("Load relations......Start")
-	if err := app.loader.Relations(collect); err != nil {
-		app.log.Error(err)
+	app.call(collect)
+
+	app.flush()
+}
+
+func (app *App) initPool() {
+	app.loadRelationsPool()
+	app.sortPool()
+	app.loadTablesPool()
+	app.removeDumpFilePool()
+	app.dumpStructPool()
+	app.dumpFullPool()
+	app.loadDepAndDumpSlicePool()
+}
+
+func (app *App) call(c *entity.Collect) {
+	for _, label := range app.index {
+		app.log.Infof("%s......Start", label)
+		if err := app.pool[label](c); err != nil {
+			app.log.Error(err)
+		}
+		app.log.Infof("%s......Done", label)
 	}
-	app.log.Info("Load relations......Done")
+}
 
-	app.log.Info("Sort......Start")
-	if err := app.loader.Weight(collect); err != nil {
-		app.log.Error(err)
-	}
+func (app *App) addPool(label string, fn Callback) {
+	app.pool[label] = fn
+	app.index = append(app.index, label)
+}
 
-	service.CallNormalize(collect)
-	app.log.Info("Sort......Done")
-
-	app.log.Info("Load tables......Start")
-	if err := app.loader.Tables(collect); err != nil {
-		app.log.Error(err)
-	}
-	app.log.Info("Load tables......Done")
-
-	app.log.Info("Load relations for leader flag......Start")
-	app.loader.LoadRelationsForLeader(collect)
-	app.log.Info("Load relations for leader flag......Done")
-
-	if err := app.dumper.RmFile(); err != nil {
-		app.log.Error(err)
-	}
-
-	app.log.Info("Dump struct......Start")
-	if err := app.dumper.Struct(); err != nil {
-		app.log.Error(err)
-	}
-	app.log.Info("Dump struct......Done")
-
-	app.log.Info("Dump data like full......Start")
-	if err := app.dumper.Full(); err != nil {
-		app.log.Error(err)
-	}
-	app.log.Info("Dump data like full......Done")
-
-	app.log.Info("Load dependences and dump data like short......Start")
-	app.runSlice(collect)
-	app.log.Info("Load dependences and dump data like short......Done")
-
+func (app *App) flush() {
 	filename, err := app.dumper.Save()
 	if err != nil {
 		app.log.Error(err)
@@ -78,7 +73,75 @@ func (app *App) Run() {
 	app.log.State(filename)
 }
 
-func (app *App) runSlice(collect *entity.Collect) {
+func (app *App) loadRelationsPool() {
+	app.addPool(
+		"Load relations",
+		func(collect *entity.Collect) error {
+			return app.loader.Relations(collect)
+		},
+	)
+}
+
+func (app *App) sortPool() {
+	app.addPool(
+		"Sort",
+		func(collect *entity.Collect) error {
+			err := app.loader.Weight(collect)
+			if err == nil {
+				service.CallNormalize(collect)
+			}
+
+			return err
+		},
+	)
+}
+
+func (app *App) loadTablesPool() {
+	app.addPool(
+		"Load tables",
+		func(collect *entity.Collect) error {
+			return app.loader.Tables(collect)
+		},
+	)
+}
+
+func (app *App) removeDumpFilePool() {
+	app.addPool(
+		"Remove dump file",
+		func(collect *entity.Collect) error {
+			return app.dumper.RmFile()
+		},
+	)
+}
+
+func (app *App) dumpStructPool() {
+	app.addPool(
+		"Dump struct",
+		func(collect *entity.Collect) error {
+			return app.dumper.Struct()
+		},
+	)
+}
+
+func (app *App) dumpFullPool() {
+	app.addPool(
+		"Dump full data",
+		func(collect *entity.Collect) error {
+			return app.dumper.Full()
+		},
+	)
+}
+
+func (app *App) loadDepAndDumpSlicePool() {
+	app.addPool(
+		"Load dependences and dump slice data",
+		func(collect *entity.Collect) error {
+			return app.loadDepAndDumpSlice(collect)
+		},
+	)
+}
+
+func (app *App) loadDepAndDumpSlice(collect *entity.Collect) error {
 	isLoop := true
 	for {
 		if isLoop {
@@ -99,15 +162,17 @@ func (app *App) runSlice(collect *entity.Collect) {
 
 			for _, rel := range collect.RelList(table.Name) {
 				if err := app.loader.Dependences(collect, rel, table.Name, rows); err != nil {
-					app.log.Error(err)
+					return err
 				}
 			}
 
 			if err := app.dumper.Slice(collect, table.Name, rows); err != nil {
-				app.log.Error(err)
+				return err
 			}
 
 			app.log.Infof("- %s......Done", table.Name)
 		}
 	}
+
+	return nil
 }

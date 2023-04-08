@@ -7,9 +7,9 @@ import (
 )
 
 type CliInterface interface {
-	ExecDump(string) error
-	RmFile() error
-	Save() (string, error)
+	ExecDump(call string) error
+	RmFile(filename string) error
+	Save(filename string) (string, error)
 }
 
 type Cli struct {
@@ -42,16 +42,11 @@ func (c *Cli) ExecDump(call string) error {
 	))
 }
 
-func (c *Cli) RmFile() error {
-	return c.exec.Command(fmt.Sprintf("rm -f %s 2> /dev/null", c.conf.Filename()))
+func (c *Cli) RmFile(filename string) error {
+	return c.exec.Command(fmt.Sprintf("rm -f %s 2> /dev/null", filename))
 }
 
-func (c *Cli) Save() (string, error) {
-	filename := c.conf.Filename()
-	if len(filename) == 0 {
-		return "", errors.New("filename is empty")
-	}
-
+func (c *Cli) Save(filename string) (string, error) {
 	if len(c.conf.Tmp) == 0 {
 		return "", errors.New("not found tmp file")
 	}

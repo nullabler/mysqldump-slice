@@ -35,3 +35,9 @@ tables:
         - updated_at
       limit: 5
       condition: "updated_at > NOW() - INTERVAL 1 WEEK"
+
+profiler:
+  active: true
+  table: user
+  key: id
+  val: 24

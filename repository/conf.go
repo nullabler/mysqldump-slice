@@ -3,7 +3,7 @@ package repository
 import (
 	"fmt"
 	"io/ioutil"
-	"time"
+	"mysqldump-slice/helper"
 
 	"gopkg.in/yaml.v3"
 )
@@ -15,11 +15,12 @@ type Conf struct {
 	Database         string `yaml:"database"`
 	DefaultExtraFile string `yaml:"default-extra-file"`
 
-	MaxConnectCount          int  `yaml:"max-connect"`
-	MaxLifetimeConnectMinute int  `yaml:"max-lifetime-connect-minute"`
-	MaxLifetimeQuerySecond   int  `yaml:"max-lifetime-query-second"`
-	Log                      bool `yaml:"log"`
-	Debug                    bool
+	MaxConnectCount          int      `yaml:"max-connect"`
+	MaxLifetimeConnectMinute int      `yaml:"max-lifetime-connect-minute"`
+	MaxLifetimeQuerySecond   int      `yaml:"max-lifetime-query-second"`
+	Log                      bool     `yaml:"log"`
+	Debug                    bool     `yaml:"debug"`
+	Profiler                 Profiler `yaml:"profiler"`
 
 	File   File   `yaml:"filename"`
 	Tables Tables `yaml:"tables"`
@@ -29,6 +30,13 @@ type Conf struct {
 
 	Tmp      string
 	LimitCli int
+}
+
+type Profiler struct {
+	Active bool   `yaml:"active"`
+	Table  string `yaml:"table"`
+	Key    string `yaml:"key"`
+	Val    string `yaml:"val"`
 }
 
 type Default struct {
@@ -119,38 +127,20 @@ func (conf *Conf) Specs(tabName string) (Specs, bool) {
 }
 
 func (conf *Conf) IsIgnore(tabName string) bool {
-	return conf.hasTable(tabName, conf.Tables.Ignore)
+	return helper.SliceIsExist(tabName, conf.Tables.Ignore)
 }
 
 func (conf *Conf) IsFull(tabName string) bool {
-	return conf.hasTable(tabName, conf.Tables.Full)
+	return helper.SliceIsExist(tabName, conf.Tables.Full)
 }
 
-func (conf *Conf) Filename() string {
-	prefix := ""
-	if len(conf.File.Prefix) > 0 {
-		prefix = conf.File.Prefix + "_"
-	}
-
+func (conf *Conf) DateFormat() string {
 	format := conf.def.dateFormat
 	if len(conf.File.DateFormat) > 0 {
 		format = conf.File.DateFormat
 	}
-	date := time.Now().Format(format)
 
-	tail := ""
-	if conf.File.Gzip {
-		tail += ".gz"
-	}
-
-	return fmt.Sprintf(
-		"%s%s%s_%s.sql%s",
-		conf.File.Path,
-		prefix,
-		date,
-		conf.Database,
-		tail,
-	)
+	return format
 }
 
 func (conf *Conf) MaxConnect() int {
@@ -175,14 +165,4 @@ func (conf *Conf) MaxLifetimeQuery() int {
 	}
 
 	return conf.def.maxLifetimeQuerySecond
-}
-
-func (conf *Conf) hasTable(tabName string, tabList []string) bool {
-	for _, tab := range tabList {
-		if tab == tabName {
-			return true
-		}
-	}
-
-	return false
 }

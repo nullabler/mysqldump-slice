@@ -1,10 +1,12 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"mysqldump-slice/entity"
 	"mysqldump-slice/repository"
 	"strings"
+	"time"
 )
 
 type Dumper struct {
@@ -24,7 +26,12 @@ func NewDumper(conf *repository.Conf, cli repository.CliInterface, db repository
 }
 
 func (d *Dumper) RmFile() error {
-	return d.cli.RmFile()
+	filename, err := d.filename()
+	if err != nil {
+		return err
+	}
+
+	return d.cli.RmFile(filename)
 }
 
 func (d *Dumper) Struct() error {
@@ -63,5 +70,39 @@ func (d *Dumper) Slice(collect entity.CollectInterface, tabName string, rows []*
 }
 
 func (d *Dumper) Save() (string, error) {
-	return d.cli.Save()
+	filename, err := d.filename()
+	if err != nil {
+		return "", err
+	}
+
+	return d.cli.Save(filename)
+}
+
+func (d *Dumper) filename() (string, error) {
+	prefix := ""
+	if len(d.conf.File.Prefix) > 0 {
+		prefix = d.conf.File.Prefix + "_"
+	}
+
+	date := time.Now().Format(d.conf.DateFormat())
+
+	tail := ""
+	if d.conf.File.Gzip {
+		tail += ".gz"
+	}
+
+	filename := fmt.Sprintf(
+		"%s%s%s_%s.sql%s",
+		d.conf.File.Path,
+		prefix,
+		date,
+		d.conf.Database,
+		tail,
+	)
+
+	if len(filename) == 0 {
+		return "", errors.New("filename is empty")
+	}
+
+	return filename, nil
 }

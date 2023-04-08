@@ -69,32 +69,11 @@ func (l *Loader) Tables(collect entity.CollectInterface) error {
 			return err
 		}
 
-		if err := collect.PushValList(table.Name, list); err != nil {
-			return err
-		}
+		collect.PushValList(table.Name, list)
 
 		l.log.Infof("- %s......Done", table.Name)
 	}
 	return nil
-}
-
-func (l *Loader) LoadRelationsForLeader(collect entity.CollectInterface) {
-	for _, table := range collect.Tables() {
-		specs, ok := l.conf.Specs(table.Name)
-		if !ok || !specs.IsLeader {
-			continue
-		}
-
-		for _, relList := range collect.AllRelList() {
-			for _, rel := range relList {
-				if rel.RefTab() == specs.Name {
-					relLeader := entity.NewRelation()
-					relLeader.Load(rel.RefTab(), rel.RefCol(), rel.Tab(), rel.Col(), rel.Limit())
-					collect.PushRelation(relLeader)
-				}
-			}
-		}
-	}
 }
 
 func (l *Loader) Weight(collect entity.CollectInterface) error {
@@ -114,6 +93,7 @@ func (l *Loader) Weight(collect entity.CollectInterface) error {
 func (l *Loader) Dependences(collect entity.CollectInterface, rel entity.RelationInterface, tabName string, rows []*entity.Row) error {
 	for _, where := range l.db.Sql().WhereSlice(rows, false) {
 		list, err := l.db.LoadDeps(tabName, where, rel)
+
 		if err != nil {
 			return err
 		}
@@ -122,7 +102,7 @@ func (l *Loader) Dependences(collect entity.CollectInterface, rel entity.Relatio
 			continue
 		}
 
-		if collect.IsPk(rel.RefTab(), rel.RefCol()) && len(collect.PkList(tabName)) == 1 {
+		if collect.IsPk(rel.RefTab(), rel.RefCol()) && len(collect.PkList(rel.RefTab())) == 1 {
 			valList := [][]*entity.Value{}
 			for _, v := range list {
 				t := []*entity.Value{
@@ -132,9 +112,7 @@ func (l *Loader) Dependences(collect entity.CollectInterface, rel entity.Relatio
 				valList = append(valList, t)
 			}
 
-			if err := collect.PushValList(rel.RefTab(), valList); err != nil {
-				return err
-			}
+			collect.PushValList(rel.RefTab(), valList)
 
 			continue
 		}
@@ -144,9 +122,7 @@ func (l *Loader) Dependences(collect entity.CollectInterface, rel entity.Relatio
 			return err
 		}
 
-		if err := collect.PushValList(rel.RefTab(), valList); err != nil {
-			return err
-		}
+		collect.PushValList(rel.RefTab(), valList)
 	}
 
 	return nil
