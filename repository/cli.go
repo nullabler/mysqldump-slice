@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"mysqldump-slice/addapter"
+	"mysqldump-slice/config"
 )
 
 type CliInterface interface {
@@ -13,11 +14,11 @@ type CliInterface interface {
 }
 
 type Cli struct {
-	conf *Conf
+	conf *config.Conf
 	exec addapter.ExecInterface
 }
 
-func NewCli(conf *Conf, exec addapter.ExecInterface) (*Cli, error) {
+func NewCli(conf *config.Conf, exec addapter.ExecInterface) (*Cli, error) {
 	return &Cli{
 		conf: conf,
 		exec: exec,

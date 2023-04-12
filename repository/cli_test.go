@@ -3,12 +3,13 @@ package repository
 import (
 	"fmt"
 	"mysqldump-slice/addapter"
+	"mysqldump-slice/config"
 	"testing"
 	"time"
 )
 
 func TestRmFile_empty(t *testing.T) {
-	conf := &Conf{}
+	conf := &config.Conf{}
 	exec := addapter.NewExecMock()
 	want := "rm -f _.sql 2> /dev/null"
 
@@ -16,9 +17,9 @@ func TestRmFile_empty(t *testing.T) {
 }
 
 func TestRmFile_filename(t *testing.T) {
-	conf := &Conf{
+	conf := &config.Conf{
 		Database: "test",
-		File: File{
+		File: config.File{
 			Path:       "./build/",
 			Prefix:     "short",
 			DateFormat: "2006-01-02",
@@ -41,7 +42,7 @@ func TestRmFile_filename(t *testing.T) {
 func TestExecDump(t *testing.T) {
 	exec := addapter.NewExecMock()
 
-	conf := &Conf{}
+	conf := &config.Conf{}
 	runExecDump_err(t, conf, exec, "", "not found tmp file")
 
 	conf.Tmp = "/tmp/1234"
@@ -60,16 +61,16 @@ func TestExecDump(t *testing.T) {
 func TestSave(t *testing.T) {
 	exec := addapter.NewExecMock()
 
-	conf := &Conf{}
+	conf := &config.Conf{}
 	runSave(t, conf, exec, "", "not found tmp file")
 
 	conf.Tmp = "/tmp/1234"
 	runSave(t, conf, exec, "cp /tmp/1234 _.sql", "")
 
-	conf = &Conf{
+	conf = &config.Conf{
 		Database: "test",
 		Tmp:      "/tmp/1234",
-		File: File{
+		File: config.File{
 			Path:       "./build/",
 			Prefix:     "short",
 			DateFormat: "2006-01-02",
@@ -81,7 +82,7 @@ func TestSave(t *testing.T) {
 	runSave(t, conf, exec, "cat /tmp/1234 | gzip > ./build/short_"+date+"_test.sql.gz", "")
 }
 
-func newCliMock(t *testing.T, conf *Conf, exec addapter.ExecInterface) *Cli {
+func newCliMock(t *testing.T, conf *config.Conf, exec addapter.ExecInterface) *Cli {
 	cli, err := NewCli(conf, exec)
 	if err != nil {
 		t.Errorf("NewCli err: %s", err.Error())
@@ -90,19 +91,15 @@ func newCliMock(t *testing.T, conf *Conf, exec addapter.ExecInterface) *Cli {
 	return cli
 }
 
-func runSave(t *testing.T, conf *Conf, exec *addapter.ExecMock, want, wantErr string) {
+func runSave(t *testing.T, conf *config.Conf, exec *addapter.ExecMock, want, wantErr string) {
 	cli := newCliMock(t, conf, exec)
 
-	filename, err := cli.Save()
+	_, err := cli.Save("")
 	if err != nil {
 		if err.Error() == wantErr {
 			return
 		}
 		t.Errorf("This not expect err: %s", err.Error())
-	}
-
-	if filename != conf.Filename() {
-		t.Errorf("Filename not equel got: %s, wanted: %s", filename, conf.Filename())
 	}
 
 	got := exec.Call()
@@ -111,7 +108,7 @@ func runSave(t *testing.T, conf *Conf, exec *addapter.ExecMock, want, wantErr st
 	}
 }
 
-func runExecDump(t *testing.T, conf *Conf, exec *addapter.ExecMock, call, want string) {
+func runExecDump(t *testing.T, conf *config.Conf, exec *addapter.ExecMock, call, want string) {
 	cli := newCliMock(t, conf, exec)
 	if err := cli.ExecDump(call); err != nil {
 		t.Errorf("This not expect err: %s", err.Error())
@@ -123,7 +120,7 @@ func runExecDump(t *testing.T, conf *Conf, exec *addapter.ExecMock, call, want s
 	}
 }
 
-func runExecDump_err(t *testing.T, conf *Conf, exec *addapter.ExecMock, call, want string) {
+func runExecDump_err(t *testing.T, conf *config.Conf, exec *addapter.ExecMock, call, want string) {
 	cli := newCliMock(t, conf, exec)
 	err := cli.ExecDump(call)
 	if err == nil {
@@ -136,9 +133,9 @@ func runExecDump_err(t *testing.T, conf *Conf, exec *addapter.ExecMock, call, wa
 	}
 }
 
-func runRmFile(t *testing.T, conf *Conf, exec *addapter.ExecMock, want string) {
+func runRmFile(t *testing.T, conf *config.Conf, exec *addapter.ExecMock, want string) {
 	cli := newCliMock(t, conf, exec)
-	if err := cli.RmFile(); err != nil {
+	if err := cli.RmFile(""); err != nil {
 		t.Errorf("This not expect err: %s", err.Error())
 	}
 

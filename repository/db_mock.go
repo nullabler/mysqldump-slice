@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"mysqldump-slice/config"
 	"mysqldump-slice/entity"
 	"strconv"
 )
@@ -46,7 +47,7 @@ type DbMockWrapper struct {
 	sql SqlInterface
 }
 
-func NewDbMockWrapper(conf *Conf, confMock ConfDbMock) *DbMockWrapper {
+func NewDbMockWrapper(conf *config.Conf, confMock ConfDbMock) *DbMockWrapper {
 	return &DbMockWrapper{
 		mock: confMock,
 		iter: make(map[string]int),
@@ -103,7 +104,7 @@ func (db *DbMockWrapper) PrimaryKeys(key string) ([]string, error) {
 	return mock.strList, mock.err
 }
 
-func (db *DbMockWrapper) LoadIds(key string, s *Specs, l []string) ([][]*entity.Value, error) {
+func (db *DbMockWrapper) LoadIds(key string, s *config.Specs, l []string) ([][]*entity.Value, error) {
 	mock := db.Impact("LoadIds_" + key)
 	if mock == nil {
 		return nil, nil

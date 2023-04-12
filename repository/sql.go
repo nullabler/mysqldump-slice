@@ -2,6 +2,7 @@ package repository
 
 import (
 	"fmt"
+	"mysqldump-slice/config"
 	"mysqldump-slice/entity"
 	"strings"
 )
@@ -14,16 +15,16 @@ type SqlInterface interface {
 	QueryFullTables(string) string
 	QueryPrimaryKeys() string
 	QueryIsIntByCol() string
-	QueryLoadIds(string, *Specs, []string) (string, error)
+	QueryLoadIds(string, *config.Specs, []string) (string, error)
 	QueryLoadDeps(string, string, string, string) string
 	QueryLoadPkByCol([]string, string, string, []string) string
 }
 
 type Sql struct {
-	conf *Conf
+	conf *config.Conf
 }
 
-func NewSql(conf *Conf) *Sql {
+func NewSql(conf *config.Conf) *Sql {
 	return &Sql{
 		conf: conf,
 	}
@@ -150,7 +151,7 @@ func (s *Sql) QueryIsIntByCol() string {
 		AND column_name = ?;`
 }
 
-func (s *Sql) QueryLoadIds(tabName string, specs *Specs, pkList []string) (string, error) {
+func (s *Sql) QueryLoadIds(tabName string, specs *config.Specs, pkList []string) (string, error) {
 	if len(pkList) == 0 {
 		return "", fmt.Errorf("Empty PrimaryKeyList for TabName: %s", tabName)
 	}
@@ -180,7 +181,7 @@ func (s *Sql) QueryLoadPkByCol(keyList []string, tabName, tabCol string, valList
 		s.wrapAndJoin(keyList), tabName, tabCol, strings.Join(s.wrapKeys(valList, "'"), ", "))
 }
 
-func (s *Sql) sort(fields []string, specs *Specs) string {
+func (s *Sql) sort(fields []string, specs *config.Specs) string {
 	if specs != nil && len(specs.Sort) > 0 {
 		fields = specs.Sort
 	}
@@ -200,7 +201,7 @@ func (s *Sql) wrapAndJoin(fields []string) string {
 	return strings.Join(s.wrapKeys(fields, "`"), ", ")
 }
 
-func (s *Sql) condition(specs *Specs) string {
+func (s *Sql) condition(specs *config.Specs) string {
 	if specs != nil && len(specs.Condition) > 0 {
 		return fmt.Sprintf(" WHERE %s", specs.Condition)
 	}
@@ -208,7 +209,7 @@ func (s *Sql) condition(specs *Specs) string {
 	return ""
 }
 
-func (s *Sql) limit(tabName string, specs *Specs) string {
+func (s *Sql) limit(tabName string, specs *config.Specs) string {
 	if s.conf.IsFull(tabName) {
 		return ""
 	}

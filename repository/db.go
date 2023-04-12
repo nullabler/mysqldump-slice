@@ -4,8 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
+	"mysqldump-slice/config"
 	"mysqldump-slice/entity"
+	"mysqldump-slice/module"
 	"time"
 )
 
@@ -14,7 +15,7 @@ type DbInterface interface {
 	LoadRelations(entity.CollectInterface) error
 	LoadTables(entity.CollectInterface) error
 	PrimaryKeys(string) ([]string, error)
-	LoadIds(string, *Specs, []string) ([][]*entity.Value, error)
+	LoadIds(string, *config.Specs, []string) ([][]*entity.Value, error)
 	LoadDeps(string, string, entity.RelationInterface) ([]string, error)
 	LoadPkByCol(string, string, []string, []string) ([][]*entity.Value, error)
 
@@ -24,13 +25,14 @@ type DbInterface interface {
 type Db struct {
 	name string
 	con  *sql.DB
-	conf *Conf
+	conf *config.Conf
 	sql  SqlInterface
+	log  module.LogInterface
 
 	isClose bool
 }
 
-func NewDb(conf *Conf, driver string) (*Db, error) {
+func NewDb(conf *config.Conf, driver string, log module.LogInterface) (*Db, error) {
 	con, err := sql.Open(driver, conf.DbUrl())
 	if err != nil {
 		return nil, err
@@ -44,6 +46,7 @@ func NewDb(conf *Conf, driver string) (*Db, error) {
 		con:  con,
 		conf: conf,
 		sql:  NewSql(conf),
+		log:  log,
 
 		isClose: false,
 	}, nil
@@ -63,7 +66,7 @@ func (db *Db) LoadRelations(collect entity.CollectInterface) error {
 	defer cancel()
 
 	sql := db.Sql().QueryRelations()
-	db.debug("LoadRelations", sql)
+	prof := db.log.Prof("LoadRelations", sql)
 	rows, err := db.con.QueryContext(ctx, sql, db.name)
 
 	if err != nil {
@@ -76,6 +79,7 @@ func (db *Db) LoadRelations(collect entity.CollectInterface) error {
 			return err
 		}
 
+		prof.Relation(rel)
 		collect.PushRelation(rel)
 	}
 
@@ -87,7 +91,7 @@ func (db *Db) LoadTables(collect entity.CollectInterface) error {
 	defer cancel()
 
 	sql := db.Sql().QueryFullTables(db.name)
-	db.debug("LoadTables", sql)
+	prof := db.log.Prof("LoadTables", sql)
 	rows, err := db.con.QueryContext(ctx, sql)
 
 	if err != nil {
@@ -104,6 +108,7 @@ func (db *Db) LoadTables(collect entity.CollectInterface) error {
 			continue
 		}
 
+		prof.Table(tabName)
 		collect.PushTable(tabName)
 	}
 
@@ -117,7 +122,7 @@ func (db *Db) PrimaryKeys(tabName string) ([]string, error) {
 	defer cancel()
 
 	sql := db.Sql().QueryPrimaryKeys()
-	db.debug("PrimaryKeys", sql)
+	prof := db.log.Prof("PrimaryKeys", sql).Table(tabName)
 	rows, err := db.con.QueryContext(ctx,
 		sql,
 		tabName,
@@ -138,16 +143,18 @@ func (db *Db) PrimaryKeys(tabName string) ([]string, error) {
 		keyList = append(keyList, key)
 	}
 
+	prof.KeyList(keyList)
+
 	return keyList, nil
 }
 
-func (db *Db) LoadIds(tabName string, specs *Specs, prKeyList []string) ([][]*entity.Value, error) {
+func (db *Db) LoadIds(tabName string, specs *config.Specs, prKeyList []string) ([][]*entity.Value, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
 	list := [][]*entity.Value{}
 	sql, errSql := db.Sql().QueryLoadIds(tabName, specs, prKeyList)
-	db.debug("LoadIds", sql)
+	prof := db.log.Prof("LoadIds", sql).Table(tabName)
 
 	if errSql != nil {
 		return list, errSql
@@ -169,6 +176,8 @@ func (db *Db) LoadIds(tabName string, specs *Specs, prKeyList []string) ([][]*en
 		}
 	}
 
+	prof.ValueList(list)
+
 	return list, nil
 }
 
@@ -187,7 +196,7 @@ func (db *Db) LoadDeps(tabName, where string, rel entity.RelationInterface) (lis
 		where,
 		limit,
 	)
-	db.debug("LoadDeps", sql)
+	prof := db.log.Prof("LoadDeps", sql).Table(tabName).Relation(rel)
 	rows, err := db.con.QueryContext(ctx, sql)
 
 	if err != nil {
@@ -210,6 +219,8 @@ func (db *Db) LoadDeps(tabName, where string, rel entity.RelationInterface) (lis
 		}
 	}
 
+	prof.ValList(list)
+
 	return
 }
 
@@ -219,7 +230,7 @@ func (db *Db) LoadPkByCol(tabName, tabCol string, pkList, valList []string) ([][
 
 	list := [][]*entity.Value{}
 	sql := db.Sql().QueryLoadPkByCol(pkList, tabName, tabCol, valList)
-	db.debug("LoadPkByCol", sql)
+	prof := db.log.Prof("LoadPkByCol", sql).Table(tabName).KeyList(pkList).ValList(valList)
 	rows, err := db.con.QueryContext(ctx, sql)
 
 	if err != nil {
@@ -236,6 +247,8 @@ func (db *Db) LoadPkByCol(tabName, tabCol string, pkList, valList []string) ([][
 			list = append(list, valList)
 		}
 	}
+
+	prof.ValueList(list)
 
 	return list, nil
 }
@@ -273,10 +286,4 @@ func (db *Db) singleScan(rows *sql.Rows) (string, error) {
 	}
 
 	return string(*buf), nil
-}
-
-func (db *Db) debug(key string, data ...interface{}) {
-	if db.conf.Debug {
-		log.Printf("Debug[%s]: %+v\n", key, data)
-	}
 }

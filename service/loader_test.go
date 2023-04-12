@@ -1,15 +1,16 @@
 package service
 
 import (
-	"fmt"
+	"mysqldump-slice/config"
 	"mysqldump-slice/entity"
+	"mysqldump-slice/module"
 	"mysqldump-slice/repository"
 	"testing"
 )
 
 func TestRelations(t *testing.T) {
-	conf := &repository.Conf{}
-	repository.FillSimpleSpecs(conf)
+	conf := &config.Conf{}
+	config.FillSimpleSpecs(conf)
 
 	confDbMock := repository.ConfDbMock{}
 	l := getLoader(conf, confDbMock)
@@ -33,7 +34,7 @@ func TestRelations(t *testing.T) {
 }
 
 func TestTables(t *testing.T) {
-	conf := &repository.Conf{}
+	conf := &config.Conf{}
 
 	confDbMock := repository.ConfDbMock{}
 	repository.FillPrimaryKeys(confDbMock)
@@ -75,28 +76,11 @@ func TestTables(t *testing.T) {
 	}
 }
 
-func TestLoadRelationsForLeader(t *testing.T) {
-	conf := &repository.Conf{}
-
-	confDbMock := repository.ConfDbMock{}
-	repository.FillPrimaryKeys(confDbMock)
-	repository.FillValList(confDbMock)
-
-	l := getLoader(conf, confDbMock)
-
-	collect := entity.NewCollect()
-	entity.FillTables(collect)
-	entity.FillAllRelList(collect)
-
-	fmt.Println(collect.AllRelList())
-	l.LoadRelationsForLeader(collect)
-}
-
-func getLoader(conf *repository.Conf, confDbMock repository.ConfDbMock) *Loader {
+func getLoader(conf *config.Conf, confDbMock repository.ConfDbMock) *Loader {
 	return NewLoader(
 		conf,
 		repository.NewDbMockWrapper(conf, confDbMock),
 		repository.NewCliMock(),
-		NewLogMock(),
+		module.NewLogMock(),
 	)
 }

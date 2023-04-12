@@ -1,9 +1,9 @@
-package service
+package module
 
 import (
 	"fmt"
 	"log"
-	"mysqldump-slice/repository"
+	"mysqldump-slice/config"
 	"os"
 )
 
@@ -12,17 +12,20 @@ type LogInterface interface {
 	Info(...string)
 	Infof(string, ...any)
 	Error(error)
-	Dump(...interface{})
+	Dump(data ...interface{})
+	Prof(label, sql string) *Profiler
 	State(string)
 }
 
 type Log struct {
-	conf *repository.Conf
+	conf *config.Conf
+	prof *Profiler
 }
 
-func NewLog(conf *repository.Conf) *Log {
+func NewLog(conf *config.Conf) *Log {
 	return &Log{
 		conf: conf,
+		prof: NewProfiler(conf),
 	}
 }
 
@@ -53,10 +56,17 @@ func (l *Log) Dump(data ...interface{}) {
 	log.Printf("%+v\n", data)
 }
 
-func (l *Log) Debug(data ...interface{}) {
-	if l.conf.Debug {
-		l.Dump(data)
+func (l *Log) Prof(label, sql string) *Profiler {
+	if l.conf.Debug && !l.conf.Profiler.Active {
+		log.Printf("Debug[%s]: %+v\n", label, sql)
 	}
+
+	if l.conf.Profiler.Active {
+		l.prof.PushHead("++++++++++" + label + "+++++++++++++")
+		l.prof.PushHead(sql)
+	}
+
+	return l.prof
 }
 
 func (l *Log) State(filename string) {

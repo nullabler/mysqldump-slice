@@ -1,18 +1,20 @@
 package service
 
 import (
+	"mysqldump-slice/config"
 	"mysqldump-slice/entity"
+	"mysqldump-slice/module"
 	"mysqldump-slice/repository"
 )
 
 type Loader struct {
-	conf *repository.Conf
+	conf *config.Conf
 	db   repository.DbInterface
 	cli  repository.CliInterface
-	log  LogInterface
+	log  module.LogInterface
 }
 
-func NewLoader(conf *repository.Conf, db repository.DbInterface, cli repository.CliInterface, log LogInterface) *Loader {
+func NewLoader(conf *config.Conf, db repository.DbInterface, cli repository.CliInterface, log module.LogInterface) *Loader {
 	return &Loader{
 		conf: conf,
 		db:   db,

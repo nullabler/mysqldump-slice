@@ -4,6 +4,8 @@ import (
 	"log"
 	"mysqldump-slice/addapter"
 	"mysqldump-slice/application"
+	"mysqldump-slice/config"
+	"mysqldump-slice/module"
 	"mysqldump-slice/repository"
 	"os"
 )
@@ -20,12 +22,14 @@ func main() {
 	f.Close()
 	defer os.Remove(f.Name())
 
-	conf, err := repository.NewConf(os.Args[1], f.Name())
+	conf, err := config.NewConf(os.Args[1], f.Name())
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	db, err := repository.NewDb(conf, "mysql")
+	lg := module.NewLog(conf)
+
+	db, err := repository.NewDb(conf, "mysql", lg)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,7 +40,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	app := application.NewApp(conf, db, cli)
+	app := application.NewApp(conf, lg, db, cli)
 
 	app.Run()
 }

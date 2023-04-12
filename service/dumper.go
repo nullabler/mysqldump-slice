@@ -3,20 +3,22 @@ package service
 import (
 	"errors"
 	"fmt"
+	"mysqldump-slice/config"
 	"mysqldump-slice/entity"
+	"mysqldump-slice/module"
 	"mysqldump-slice/repository"
 	"strings"
 	"time"
 )
 
 type Dumper struct {
-	conf *repository.Conf
+	conf *config.Conf
 	cli  repository.CliInterface
 	db   repository.DbInterface
-	log  LogInterface
+	log  module.LogInterface
 }
 
-func NewDumper(conf *repository.Conf, cli repository.CliInterface, db repository.DbInterface, log LogInterface) *Dumper {
+func NewDumper(conf *config.Conf, cli repository.CliInterface, db repository.DbInterface, log module.LogInterface) *Dumper {
 	return &Dumper{
 		conf: conf,
 		cli:  cli,

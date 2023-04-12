@@ -13,10 +13,10 @@ func (c *CliMock) ExecDump(string) error {
 	return c.err
 }
 
-func (c *CliMock) RmFile() error {
+func (c *CliMock) RmFile(string) error {
 	return c.err
 }
 
-func (c *CliMock) Save() (string, error) {
+func (c *CliMock) Save(string) (string, error) {
 	return c.str, c.err
 }

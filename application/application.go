@@ -1,7 +1,9 @@
 package application
 
 import (
+	"mysqldump-slice/config"
 	"mysqldump-slice/entity"
+	"mysqldump-slice/module"
 	"mysqldump-slice/repository"
 	"mysqldump-slice/service"
 
@@ -11,7 +13,7 @@ import (
 type App struct {
 	loader *service.Loader
 	dumper *service.Dumper
-	log    service.LogInterface
+	log    module.LogInterface
 
 	index []string
 	pool  map[string]Callback
@@ -19,14 +21,10 @@ type App struct {
 
 type Callback func(*entity.Collect) error
 
-func NewApp(conf *repository.Conf, db repository.DbInterface, cli repository.CliInterface) *App {
-	log := service.NewLog(conf)
-
+func NewApp(conf *config.Conf, log module.LogInterface, db repository.DbInterface, cli repository.CliInterface) *App {
 	return &App{
-		loader: service.NewLoader(conf, db, cli, log),
-		dumper: service.NewDumper(conf, cli, db, log),
-		log:    log,
-		pool:   make(map[string]Callback),
+		loader: service.NewLoader(conf, db, cli, log), dumper: service.NewDumper(conf, cli, db, log), log: log,
+		pool: make(map[string]Callback),
 	}
 }
 

@@ -1,12 +1,13 @@
 package repository
 
 import (
+	"mysqldump-slice/config"
 	"mysqldump-slice/entity"
 	"testing"
 )
 
 func TestWhere(t *testing.T) {
-	c := &Conf{}
+	c := &config.Conf{}
 	s := NewSql(c)
 
 	valList := []*entity.Value{
@@ -49,7 +50,7 @@ func TestWhere(t *testing.T) {
 }
 
 func TestWhereSlice(t *testing.T) {
-	c := &Conf{
+	c := &config.Conf{
 		LimitCli: 2,
 	}
 	s := NewSql(c)
@@ -77,10 +78,10 @@ func TestWhereSlice(t *testing.T) {
 }
 
 func TestQueryLoadIds(t *testing.T) {
-	c := &Conf{}
+	c := &config.Conf{}
 	s := NewSql(c)
 
-	specs := new(Specs)
+	specs := new(config.Specs)
 	prKeyList := []string{}
 
 	_, err := s.QueryLoadIds(
@@ -108,7 +109,7 @@ func TestQueryLoadIds(t *testing.T) {
 		t.Errorf("Fail for QueryLoadIds Exp: %s Got: %s", exp, got)
 	}
 
-	specs = &Specs{
+	specs = &config.Specs{
 		Condition: "`updated_at` > NOW()",
 		Sort:      []string{"updated_at", "created_at"},
 		Limit:     3,
@@ -130,7 +131,7 @@ func TestQueryLoadIds(t *testing.T) {
 }
 
 func TestWrapKeys(t *testing.T) {
-	c := &Conf{}
+	c := &config.Conf{}
 	s := NewSql(c)
 
 	keys := []string{"test", "word"}

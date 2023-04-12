@@ -1,4 +1,4 @@
-package repository
+package config
 
 import (
 	"fmt"
@@ -30,51 +30,6 @@ type Conf struct {
 
 	Tmp      string
 	LimitCli int
-}
-
-type Profiler struct {
-	Active bool   `yaml:"active"`
-	Table  string `yaml:"table"`
-	Key    string `yaml:"key"`
-	Val    string `yaml:"val"`
-}
-
-type Default struct {
-	dateFormat               string
-	maxConnectCount          int
-	maxLifetimeConnectMinute int
-	maxLifetimeQuerySecond   int
-}
-
-type File struct {
-	Path       string `yaml:"path"`
-	Prefix     string `yaml:"prefix"`
-	DateFormat string `yaml:"date-format"`
-	Gzip       bool   `yaml:"gzip"`
-}
-
-type Tables struct {
-	Limit  int      `yaml:"limit"`
-	Full   []string `yaml:"full"`
-	Ignore []string `yaml:"ignore"`
-	Specs  []Specs  `yaml:"specs"`
-}
-
-type Specs struct {
-	Name      string   `yaml:"name"`
-	Pk        []string `yaml:"pk"`
-	Fk        []Fk     `yaml:"fk"`
-	Sort      []string `yaml:"sort"`
-	Limit     int      `yaml:"limit"`
-	Condition string   `yaml:"condition"`
-	IsLeader  bool     `yaml:"is-leader"`
-}
-
-type Fk struct {
-	Col   string `yaml:"col"`
-	FkTab string `yaml:"fk_tab"`
-	FkCol string `yaml:"fk_col"`
-	Limit int    `yaml:"limit"`
 }
 
 func NewConf(pathToFile, tmpFilename string) (*Conf, error) {
