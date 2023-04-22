@@ -43,7 +43,7 @@ func FillTabList(collect *Collect) {
 	product := collect.Tab("product")
 	for _, id := range []string{"1", "2", "3"} {
 		valList := []*Value{
-			NewValue("id", id),
+			NewValue("uuid", id),
 		}
 		product.Push(valList)
 	}
