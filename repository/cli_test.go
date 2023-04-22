@@ -13,7 +13,7 @@ func TestRmFile_empty(t *testing.T) {
 	exec := addapter.NewExecMock()
 	want := "rm -f _.sql 2> /dev/null"
 
-	runRmFile(t, conf, exec, want)
+	runRmFile(t, conf, exec, "_.sql", want)
 }
 
 func TestRmFile_filename(t *testing.T) {
@@ -29,14 +29,18 @@ func TestRmFile_filename(t *testing.T) {
 
 	date := time.Now().Format(conf.File.DateFormat)
 
-	want := fmt.Sprintf("rm -f %s%s_%s_%s.sql.gz 2> /dev/null",
+	filename := fmt.Sprintf("%s%s_%s_%s.sql.gz",
 		conf.File.Path,
 		conf.File.Prefix,
 		date,
 		conf.Database,
 	)
 
-	runRmFile(t, conf, addapter.NewExecMock(), want)
+	want := fmt.Sprintf("rm -f %s 2> /dev/null",
+		filename,
+	)
+
+	runRmFile(t, conf, addapter.NewExecMock(), filename, want)
 }
 
 func TestExecDump(t *testing.T) {
@@ -62,10 +66,10 @@ func TestSave(t *testing.T) {
 	exec := addapter.NewExecMock()
 
 	conf := &config.Conf{}
-	runSave(t, conf, exec, "", "not found tmp file")
+	runSave(t, conf, exec, "", "", "Filename is empty")
 
 	conf.Tmp = "/tmp/1234"
-	runSave(t, conf, exec, "cp /tmp/1234 _.sql", "")
+	runSave(t, conf, exec, "_.sql", "cp /tmp/1234 _.sql", "")
 
 	conf = &config.Conf{
 		Database: "test",
@@ -79,7 +83,8 @@ func TestSave(t *testing.T) {
 	}
 
 	date := time.Now().Format(conf.File.DateFormat)
-	runSave(t, conf, exec, "cat /tmp/1234 | gzip > ./build/short_"+date+"_test.sql.gz", "")
+	filename := "./build/short_" + date + "_test.sql.gz"
+	runSave(t, conf, exec, filename, "cat /tmp/1234 | gzip > "+filename, "")
 }
 
 func newCliMock(t *testing.T, conf *config.Conf, exec addapter.ExecInterface) *Cli {
@@ -91,10 +96,10 @@ func newCliMock(t *testing.T, conf *config.Conf, exec addapter.ExecInterface) *C
 	return cli
 }
 
-func runSave(t *testing.T, conf *config.Conf, exec *addapter.ExecMock, want, wantErr string) {
+func runSave(t *testing.T, conf *config.Conf, exec *addapter.ExecMock, filename, want, wantErr string) {
 	cli := newCliMock(t, conf, exec)
 
-	_, err := cli.Save("")
+	err := cli.Save(filename)
 	if err != nil {
 		if err.Error() == wantErr {
 			return
@@ -133,10 +138,10 @@ func runExecDump_err(t *testing.T, conf *config.Conf, exec *addapter.ExecMock, c
 	}
 }
 
-func runRmFile(t *testing.T, conf *config.Conf, exec *addapter.ExecMock, want string) {
+func runRmFile(t *testing.T, conf *config.Conf, exec *addapter.ExecMock, filename, want string) {
 	cli := newCliMock(t, conf, exec)
-	if err := cli.RmFile(""); err != nil {
-		t.Errorf("This not expect err: %s", err.Error())
+	if err := cli.RmFile(filename); err != nil {
+		t.Errorf(err.Error())
 	}
 
 	got := exec.Call()

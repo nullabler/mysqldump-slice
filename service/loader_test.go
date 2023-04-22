@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"mysqldump-slice/config"
 	"mysqldump-slice/entity"
 	"mysqldump-slice/module"
@@ -73,6 +74,30 @@ func TestTables(t *testing.T) {
 		len(collect.Tab("product").Rows()) != 4 ||
 		len(collect.Tab("category").Rows()) != 1 {
 		t.Error("Fail incorrect load valList")
+	}
+}
+
+func TestDependences(t *testing.T) {
+	conf := &config.Conf{}
+
+	confDbMock := repository.ConfDbMock{}
+	repository.FillPrimaryKeys(confDbMock)
+	repository.FillValList(confDbMock)
+
+	l := getLoader(conf, confDbMock)
+
+	collect := entity.NewCollect()
+	entity.FillTables(collect)
+	entity.FillTabList(collect)
+
+	for _, table := range collect.Tables() {
+		fmt.Println(table.Name, collect.Tab(table.Name).Pull())
+		rows := collect.Tab(table.Name).Pull()
+		for _, rel := range collect.RelList(table.Name) {
+			if err := l.Dependences(collect, rel, table.Name, rows); err != nil {
+				t.Error(err)
+			}
+		}
 	}
 }
 

@@ -5,13 +5,13 @@ import "testing"
 func TestSprint(t *testing.T) {
 	v := NewValue("id", "2")
 
-	exp := "`id` = 2"
+	exp := "`id` = '2'"
 	got := v.Sprint(false)
 	if exp != got {
 		t.Errorf("Fail Sprint Exp: %s Got: %s", exp, got)
 	}
 
-	exp = "\\`id\\` = 2"
+	exp = "\\`id\\` = '2'"
 	got = v.Sprint(true)
 	if exp != got {
 		t.Errorf("Fail Sprint Exp: %s Got: %s", exp, got)

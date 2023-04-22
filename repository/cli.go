@@ -10,7 +10,7 @@ import (
 type CliInterface interface {
 	ExecDump(call string) error
 	RmFile(filename string) error
-	Save(filename string) (string, error)
+	Save(filename string) error
 }
 
 type Cli struct {
@@ -44,12 +44,20 @@ func (c *Cli) ExecDump(call string) error {
 }
 
 func (c *Cli) RmFile(filename string) error {
+	if err := c.isValidFilename(filename); err != nil {
+		return err
+	}
+
 	return c.exec.Command(fmt.Sprintf("rm -f %s 2> /dev/null", filename))
 }
 
-func (c *Cli) Save(filename string) (string, error) {
+func (c *Cli) Save(filename string) error {
+	if err := c.isValidFilename(filename); err != nil {
+		return err
+	}
+
 	if len(c.conf.Tmp) == 0 {
-		return "", errors.New("not found tmp file")
+		return errors.New("not found tmp file")
 	}
 
 	action := "cp %s %s"
@@ -57,11 +65,19 @@ func (c *Cli) Save(filename string) (string, error) {
 		action = "cat %s | gzip > %s"
 	}
 
-	return filename, c.exec.Command(fmt.Sprintf(
+	return c.exec.Command(fmt.Sprintf(
 		action,
 		c.conf.Tmp,
 		filename,
 	))
+}
+
+func (c *Cli) isValidFilename(filename string) error {
+	if len(filename) == 0 {
+		return errors.New("Filename is empty")
+	}
+
+	return nil
 }
 
 func (c *Cli) auth() (string, error) {

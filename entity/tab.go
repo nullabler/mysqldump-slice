@@ -36,10 +36,15 @@ func (tab *Tab) Pull() (list []*Row) {
 
 func (tab *Tab) isExist(valList []*Value) bool {
 	for _, row := range tab.rows {
+		flag := true
 		for _, val := range row.valList {
-			if val.contains(valList) {
-				return true
+			if flag && !val.contains(valList) {
+				flag = false
 			}
+		}
+
+		if flag {
+			return true
 		}
 	}
 

@@ -1,7 +1,6 @@
 package repository
 
 type CliMock struct {
-	str string
 	err error
 }
 
@@ -17,6 +16,6 @@ func (c *CliMock) RmFile(string) error {
 	return c.err
 }
 
-func (c *CliMock) Save(string) (string, error) {
-	return c.str, c.err
+func (c *CliMock) Save(string) error {
+	return c.err
 }

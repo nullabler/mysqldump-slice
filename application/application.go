@@ -63,9 +63,14 @@ func (app *App) addPool(label string, fn Callback) {
 }
 
 func (app *App) flush() {
-	filename, err := app.dumper.Save()
+	if err := app.dumper.Save(); err != nil {
+		app.log.Error(err)
+	}
+
+	filename, err := app.dumper.Filename()
 	if err != nil {
 		app.log.Error(err)
+		return
 	}
 
 	app.log.State(filename)

@@ -24,3 +24,45 @@ func FillAllRelList(collect *Collect) {
 		genRel("order", "product_id", "product", "uuid", 3),
 	)
 }
+
+func FillTabList(collect *Collect) {
+	for _, table := range collect.Tables() {
+		collect.PushTab(table.Name)
+	}
+
+	// User
+	user := collect.Tab("user")
+	for _, id := range []string{"1", "2", "3"} {
+		valList := []*Value{
+			NewValue("id", id),
+		}
+		user.Push(valList)
+	}
+
+	// Product
+	product := collect.Tab("product")
+	for _, id := range []string{"1", "2", "3"} {
+		valList := []*Value{
+			NewValue("id", id),
+		}
+		product.Push(valList)
+	}
+
+	// Category
+	category := collect.Tab("product")
+	for _, id := range []string{"1", "2", "3"} {
+		valList := []*Value{
+			NewValue("id", id),
+		}
+		category.Push(valList)
+	}
+
+	// Order
+	order := collect.Tab("order")
+	for _, id := range []string{"1", "2", "3"} {
+		valList := []*Value{
+			NewValue("id", id),
+		}
+		order.Push(valList)
+	}
+}

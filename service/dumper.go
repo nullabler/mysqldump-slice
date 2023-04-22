@@ -28,7 +28,7 @@ func NewDumper(conf *config.Conf, cli repository.CliInterface, db repository.DbI
 }
 
 func (d *Dumper) RmFile() error {
-	filename, err := d.filename()
+	filename, err := d.Filename()
 	if err != nil {
 		return err
 	}
@@ -71,16 +71,16 @@ func (d *Dumper) Slice(collect entity.CollectInterface, tabName string, rows []*
 	return nil
 }
 
-func (d *Dumper) Save() (string, error) {
-	filename, err := d.filename()
+func (d *Dumper) Save() error {
+	filename, err := d.Filename()
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	return d.cli.Save(filename)
 }
 
-func (d *Dumper) filename() (string, error) {
+func (d *Dumper) Filename() (string, error) {
 	prefix := ""
 	if len(d.conf.File.Prefix) > 0 {
 		prefix = d.conf.File.Prefix + "_"

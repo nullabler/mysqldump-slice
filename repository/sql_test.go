@@ -22,7 +22,7 @@ func TestWhere(t *testing.T) {
 		t.Error("Fail count result")
 	}
 
-	exp := "(`id` = 1)"
+	exp := "(`id` = '1')"
 	if list[0] != exp {
 		t.Errorf("Fail result from where func Exp: %s Got: %s", exp, list[0])
 	}
@@ -36,14 +36,14 @@ func TestWhere(t *testing.T) {
 		t.Error("Fail count result")
 	}
 
-	exp = "(`id` = 1 AND `category_id` = 4 AND `filter_id` = 7)"
+	exp = "(`id` = '1' AND `category_id` = '4' AND `filter_id` = '7')"
 	if list[1] != exp {
 		t.Errorf("Fail result from where func Exp: %s Got: %s", exp, list[1])
 	}
 
 	list = s.Where(rowList, true)
 
-	exp = "(\\`id\\` = 1)"
+	exp = "(\\`id\\` = '1')"
 	if list[0] != exp {
 		t.Errorf("Fail result from where func Exp: %s Got: %s", exp, list[0])
 	}
@@ -58,7 +58,7 @@ func TestWhereSlice(t *testing.T) {
 	rowList := []*entity.Row{}
 	for _, i := range []string{"3", "5", "6", "7", "8", "2", "9"} {
 		valList := []*entity.Value{
-			entity.NewValue("uuid", "'xxxx-rrrr-"+i+"'"),
+			entity.NewValue("uuid", "xxxx-rrrr-"+i),
 			entity.NewValue("cat_id", i),
 		}
 
@@ -70,7 +70,7 @@ func TestWhereSlice(t *testing.T) {
 		t.Error("Fail count result")
 	}
 
-	exp := "(`uuid` = 'xxxx-rrrr-3' AND `cat_id` = 3) OR (`uuid` = 'xxxx-rrrr-5' AND `cat_id` = 5)"
+	exp := "(`uuid` = 'xxxx-rrrr-3' AND `cat_id` = '3') OR (`uuid` = 'xxxx-rrrr-5' AND `cat_id` = '5')"
 	if list[0] != exp {
 		t.Errorf("Fail result from where func Exp: %s Got: %s", exp, list[0])
 	}
