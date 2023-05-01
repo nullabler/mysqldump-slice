@@ -15,9 +15,9 @@ type DbInterface interface {
 	LoadRelations(entity.CollectInterface) error
 	LoadTables(entity.CollectInterface) error
 	PrimaryKeys(string) ([]string, error)
-	LoadIds(string, *config.Specs, []string) ([][]*entity.Value, error)
+	LoadIds(string, *config.Specs, []string) ([]entity.ValList, error)
 	LoadDeps(string, string, entity.RelationInterface) ([]string, error)
-	LoadPkByCol(string, string, []string, []string) ([][]*entity.Value, error)
+	LoadPkByCol(string, string, []string, []string, bool) ([]entity.ValList, error)
 
 	Sql() SqlInterface
 }
@@ -66,7 +66,7 @@ func (db *Db) LoadRelations(collect entity.CollectInterface) error {
 	defer cancel()
 
 	sql := db.Sql().QueryRelations()
-	prof := db.log.Prof("LoadRelations", sql)
+	db.log.Debug("LoadRelations", sql)
 	rows, err := db.con.QueryContext(ctx, sql, db.name)
 
 	if err != nil {
@@ -79,7 +79,6 @@ func (db *Db) LoadRelations(collect entity.CollectInterface) error {
 			return err
 		}
 
-		prof.Relation(rel)
 		collect.PushRelation(rel)
 	}
 
@@ -91,9 +90,9 @@ func (db *Db) LoadTables(collect entity.CollectInterface) error {
 	defer cancel()
 
 	sql := db.Sql().QueryFullTables(db.name)
-	prof := db.log.Prof("LoadTables", sql)
-	rows, err := db.con.QueryContext(ctx, sql)
+	db.log.Debug("LoadTables", sql)
 
+	rows, err := db.con.QueryContext(ctx, sql)
 	if err != nil {
 		return err
 	}
@@ -108,7 +107,6 @@ func (db *Db) LoadTables(collect entity.CollectInterface) error {
 			continue
 		}
 
-		prof.Table(tabName)
 		collect.PushTable(tabName)
 	}
 
@@ -122,7 +120,8 @@ func (db *Db) PrimaryKeys(tabName string) ([]string, error) {
 	defer cancel()
 
 	sql := db.Sql().QueryPrimaryKeys()
-	prof := db.log.Prof("PrimaryKeys", sql).Table(tabName)
+	db.log.Debug("PrimaryKeys", sql)
+
 	rows, err := db.con.QueryContext(ctx,
 		sql,
 		tabName,
@@ -143,18 +142,16 @@ func (db *Db) PrimaryKeys(tabName string) ([]string, error) {
 		keyList = append(keyList, key)
 	}
 
-	prof.KeyList(keyList)
-
 	return keyList, nil
 }
 
-func (db *Db) LoadIds(tabName string, specs *config.Specs, prKeyList []string) ([][]*entity.Value, error) {
+func (db *Db) LoadIds(tabName string, specs *config.Specs, prKeyList []string) ([]entity.ValList, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
-	list := [][]*entity.Value{}
+	list := []entity.ValList{}
 	sql, errSql := db.Sql().QueryLoadIds(tabName, specs, prKeyList)
-	prof := db.log.Prof("LoadIds", sql).Table(tabName)
+	db.log.Debug("LoadIds", sql)
 
 	if errSql != nil {
 		return list, errSql
@@ -166,7 +163,7 @@ func (db *Db) LoadIds(tabName string, specs *config.Specs, prKeyList []string) (
 	}
 
 	for rows.Next() {
-		valList, err := db.Scan(rows, prKeyList)
+		valList, err := db.Scan(rows)
 		if err != nil {
 			return list, err
 		}
@@ -176,8 +173,6 @@ func (db *Db) LoadIds(tabName string, specs *config.Specs, prKeyList []string) (
 		}
 	}
 
-	prof.ValueList(list)
-
 	return list, nil
 }
 
@@ -186,8 +181,11 @@ func (db *Db) LoadDeps(tabName, where string, rel entity.RelationInterface) (lis
 	defer cancel()
 
 	limit := ""
-	if rel.Limit() > 0 {
-		limit = fmt.Sprintf("LIMIT %d", rel.Limit())
+	spec, ok := db.conf.Specs(tabName)
+	if ok {
+		if spec.DepLimit > 0 {
+			limit = fmt.Sprintf("LIMIT %d", spec.DepLimit)
+		}
 	}
 
 	sql := db.Sql().QueryLoadDeps(
@@ -196,9 +194,10 @@ func (db *Db) LoadDeps(tabName, where string, rel entity.RelationInterface) (lis
 		where,
 		limit,
 	)
-	prof := db.log.Prof("LoadDeps", sql).Table(tabName).Relation(rel)
-	rows, err := db.con.QueryContext(ctx, sql)
 
+	db.log.Debug("LoadDeps", sql)
+
+	rows, err := db.con.QueryContext(ctx, sql)
 	if err != nil {
 		return
 	}
@@ -210,35 +209,28 @@ func (db *Db) LoadDeps(tabName, where string, rel entity.RelationInterface) (lis
 		}
 
 		if len(val) > 0 {
-			for _, item := range list {
-				if item == val {
-					return list, nil
-				}
-			}
 			list = append(list, val)
 		}
 	}
 
-	prof.ValList(list)
-
 	return
 }
 
-func (db *Db) LoadPkByCol(tabName, tabCol string, pkList, valList []string) ([][]*entity.Value, error) {
+func (db *Db) LoadPkByCol(tabName, tabCol string, pkList, valList []string, isGreedy bool) ([]entity.ValList, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(db.conf.MaxLifetimeQuery())*time.Second)
 	defer cancel()
 
-	list := [][]*entity.Value{}
-	sql := db.Sql().QueryLoadPkByCol(pkList, tabName, tabCol, valList)
-	prof := db.log.Prof("LoadPkByCol", sql).Table(tabName).KeyList(pkList).ValList(valList)
-	rows, err := db.con.QueryContext(ctx, sql)
+	list := []entity.ValList{}
+	sql := db.Sql().QueryLoadPkByCol(pkList, tabName, tabCol, valList, isGreedy)
+	db.log.Debug("LoadPkByCol", sql)
 
+	rows, err := db.con.QueryContext(ctx, sql)
 	if err != nil {
 		return list, err
 	}
 
 	for rows.Next() {
-		valList, err := db.Scan(rows, pkList)
+		valList, err := db.Scan(rows)
 		if err != nil {
 			return list, err
 		}
@@ -248,8 +240,6 @@ func (db *Db) LoadPkByCol(tabName, tabCol string, pkList, valList []string) ([][
 		}
 	}
 
-	prof.ValueList(list)
-
 	return list, nil
 }
 
@@ -257,12 +247,18 @@ func (db *Db) Sql() SqlInterface {
 	return db.sql
 }
 
-func (db *Db) Scan(rows *sql.Rows, fields []string) ([]*entity.Value, error) {
-	length := len(fields)
+func (db *Db) Scan(rows *sql.Rows) ([]*entity.Value, error) {
 	list := []*entity.Value{}
 
+	cols, err := rows.Columns()
+	if err != nil {
+		return list, err
+	}
+
+	length := len(cols)
 	buf := make([]interface{}, length)
-	for i := range fields {
+
+	for i := range cols {
 		buf[i] = new(sql.RawBytes)
 	}
 
@@ -272,7 +268,7 @@ func (db *Db) Scan(rows *sql.Rows, fields []string) ([]*entity.Value, error) {
 
 	for i := 0; i < length; i++ {
 		if v, ok := buf[i].(*sql.RawBytes); ok {
-			list = append(list, entity.NewValue(fields[i], string(*v)))
+			list = append(list, entity.NewValue(cols[i], string(*v)))
 		}
 	}
 

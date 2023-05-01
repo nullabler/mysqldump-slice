@@ -7,7 +7,7 @@ type CollectInterface interface {
 	AllRelList() map[string][]RelationInterface
 	RelList(tabName string) []RelationInterface
 	PushTab(tabName string)
-	PushValList(tabName string, list [][]*Value)
+	PushValList(tabName string, list []ValList)
 	Tab(tabName string) TabInterface
 	PushPkList(tabName string, pkList []string)
 	PkList(tabName string) []string
@@ -53,7 +53,7 @@ func (c *Collect) PushTab(tabName string) {
 	c.tabList[tabName] = NewTab(tabName)
 }
 
-func (c *Collect) PushValList(tabName string, list [][]*Value) {
+func (c *Collect) PushValList(tabName string, list []ValList) {
 	if len(list) == 0 {
 		return
 	}

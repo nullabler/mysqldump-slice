@@ -9,7 +9,7 @@ func FillTables(collect *Collect) {
 func FillAllRelList(collect *Collect) {
 	genRel := func(tab, col, refTab, refCol string, limit int) *Relation {
 		rel := NewRelation()
-		rel.Load(tab, col, refTab, refCol, limit)
+		rel.Load(tab, col, refTab, refCol, limit, false)
 		return rel
 	}
 

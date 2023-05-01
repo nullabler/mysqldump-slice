@@ -1,18 +1,18 @@
 package entity
 
 type Row struct {
-	valList []*Value
+	valList ValList
 	used    bool
 }
 
-func NewRow(valList []*Value) *Row {
+func NewRow(valList ValList) *Row {
 	return &Row{
 		valList: valList,
 		used:    false,
 	}
 }
 
-func (r *Row) ValList() []*Value {
+func (r *Row) ValList() ValList {
 	return r.valList
 }
 

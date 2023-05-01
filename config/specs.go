@@ -6,6 +6,7 @@ type Specs struct {
 	Fk        []Fk     `yaml:"fk"`
 	Sort      []string `yaml:"sort"`
 	Limit     int      `yaml:"limit"`
+	DepLimit  int      `yaml:"dep-limit"`
 	Condition string   `yaml:"condition"`
 	IsLeader  bool     `yaml:"is-leader"`
 }

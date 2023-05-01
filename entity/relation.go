@@ -4,12 +4,13 @@ import "database/sql"
 
 type RelationInterface interface {
 	Parse(*sql.Rows) error
-	Load(string, string, string, string, int)
+	Load(string, string, string, string, int, bool)
 	Tab() string
 	Col() string
 	RefTab() string
 	RefCol() string
 	Limit() int
+	IsGreedy() bool
 }
 
 type Relation struct {
@@ -18,6 +19,7 @@ type Relation struct {
 	refTable  string
 	refColumn string
 	limit     int
+	isGreedy  bool
 }
 
 func NewRelation() *Relation {
@@ -30,12 +32,13 @@ func (rel *Relation) Parse(rows *sql.Rows) (err error) {
 	return rows.Scan(&rel.table, &rel.refTable, &rel.column, &rel.refColumn)
 }
 
-func (rel *Relation) Load(tab, col, refTab, refCol string, limit int) {
+func (rel *Relation) Load(tab, col, refTab, refCol string, limit int, isGreedy bool) {
 	rel.table = tab
 	rel.column = col
 	rel.refTable = refTab
 	rel.refColumn = refCol
 	rel.limit = limit
+	rel.isGreedy = isGreedy
 }
 
 func (rel *Relation) Tab() string {
@@ -56,4 +59,8 @@ func (rel *Relation) RefCol() string {
 
 func (rel *Relation) Limit() int {
 	return rel.limit
+}
+
+func (rel *Relation) IsGreedy() bool {
+	return rel.isGreedy
 }

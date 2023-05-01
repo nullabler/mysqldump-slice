@@ -17,7 +17,7 @@ type SqlInterface interface {
 	QueryIsIntByCol() string
 	QueryLoadIds(string, *config.Specs, []string) (string, error)
 	QueryLoadDeps(string, string, string, string) string
-	QueryLoadPkByCol([]string, string, string, []string) string
+	QueryLoadPkByCol([]string, string, string, []string, bool) string
 }
 
 type Sql struct {
@@ -176,9 +176,14 @@ func (s *Sql) QueryLoadDeps(col, tabName, where, limit string) string {
 	)
 }
 
-func (s *Sql) QueryLoadPkByCol(keyList []string, tabName, tabCol string, valList []string) string {
-	return fmt.Sprintf("SELECT %s FROM `%s` WHERE `%s` IN (%s)",
-		s.wrapAndJoin(keyList), tabName, tabCol, strings.Join(s.wrapKeys(valList, "'"), ", "))
+func (s *Sql) QueryLoadPkByCol(keyList []string, tabName, tabCol string, valList []string, isGreedy bool) string {
+	group := ""
+	if isGreedy {
+		group = fmt.Sprintf("GROUP BY `%s`", tabCol)
+	}
+
+	return fmt.Sprintf("SELECT %s FROM `%s` WHERE `%s` IN (%s) %s",
+		s.wrapAndJoin(keyList), tabName, tabCol, strings.Join(s.wrapKeys(valList, "'"), ", "), group)
 }
 
 func (s *Sql) sort(fields []string, specs *config.Specs) string {

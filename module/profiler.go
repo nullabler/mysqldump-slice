@@ -1,16 +1,14 @@
 package module
 
 import (
-	"fmt"
 	"mysqldump-slice/config"
 	"mysqldump-slice/entity"
-	"strings"
+	"mysqldump-slice/helper"
 )
 
 type Profiler struct {
-	conf     *config.Conf
-	headList []string
-	resList  []string
+	conf              *config.Conf
+	tabNameParentList []string
 }
 
 func NewProfiler(conf *config.Conf) *Profiler {
@@ -19,120 +17,124 @@ func NewProfiler(conf *config.Conf) *Profiler {
 	}
 }
 
-func (p *Profiler) Conf() config.Profiler {
-	return p.conf.Profiler
+func (p *Profiler) Active() bool {
+	return p.conf.Profiler.Active
 }
 
-func (p *Profiler) String() string {
-	return strings.Join(p.resList, "\r\t")
-}
-
-func (p *Profiler) PushHead(h string) *Profiler {
-	if !p.Conf().Active {
-		return p
+func (p *Profiler) TabName(tabName string) bool {
+	if len(p.conf.Profiler.Table) == 0 {
+		return false
 	}
 
-	p.headList = append(p.headList, h)
-
-	return p
+	return tabName == p.conf.Profiler.Table
 }
 
-func (p *Profiler) Table(tabName string) *Profiler {
-	if !p.Conf().Active {
-		return p
+func (p *Profiler) TraceDep(tabName, refTab string) bool {
+	if len(p.conf.Profiler.TraceDep) == 0 {
+		return true
 	}
 
-	p.tab("Main", tabName)
-
-	return p
-}
-
-func (p *Profiler) KeyList(list []string) *Profiler {
-	if !p.Conf().Active {
-		return p
+	if refTab != p.conf.Profiler.TraceDep {
+		return false
 	}
 
-	for _, k := range list {
-		p.col("KeyList", k)
-	}
-
-	return p
-}
-
-func (p *Profiler) ValList(list []string) *Profiler {
-	if !p.Conf().Active {
-		return p
-	}
-
-	for _, v := range list {
-		p.col("ValList", v)
-	}
-
-	return p
-}
-
-func (p *Profiler) ValueList(list [][]*entity.Value) *Profiler {
-	if !p.Conf().Active {
-		return p
-	}
-
-	for _, vl := range list {
-		for _, v := range vl {
-			p.col("ValueList", v.Key())
-			p.val("ValueList", v.Val(false))
-		}
-	}
-
-	return p
-}
-
-func (p *Profiler) Relation(rel entity.RelationInterface) *Profiler {
-	if !p.Conf().Active {
-		return p
-	}
-
-	p.tab("Relation::Main", rel.Tab())
-	p.tab("Relation::Referenced", rel.RefTab())
-
-	p.col("Relation::Main", rel.Col())
-	p.col("Relation::Referenced", rel.RefCol())
-
-	return p
-}
-
-func (p *Profiler) clear() {
-	p.headList = []string{}
-}
-
-func (p *Profiler) push(format string, params ...any) {
-	if len(p.headList) > 0 {
-		for _, i := range p.headList {
-			p.resList = append(p.resList, i)
-		}
-		p.clear()
-	}
-
-	p.resList = append(p.resList, fmt.Sprintf(format, params...))
-}
-
-func (p *Profiler) tab(label, tabName string) bool {
-	return p.compare("Table["+label+"]", tabName, p.Conf().Table)
-}
-
-func (p *Profiler) col(label, col string) bool {
-	return p.compare("Column["+label+"]", col, p.Conf().Key)
-}
-
-func (p *Profiler) val(label, val string) bool {
-	return p.compare("Value["+label+"]", val, p.Conf().Val)
-}
-
-func (p *Profiler) compare(label, got, wont string) bool {
-	if got == wont {
-		p.push("%s: %s", label, got)
+	if !helper.SliceIsExist(tabName, p.tabNameParentList) {
+		p.tabNameParentList = append(p.tabNameParentList, tabName)
 
 		return true
 	}
 
 	return false
+}
+
+func (p *Profiler) RowList(rows []*entity.Row, enableUsed, enableKey, enableVal bool) bool {
+	for _, row := range rows {
+		if enableUsed && row.IsUsed() {
+			continue
+		}
+
+		for _, val := range row.ValList() {
+			isKey := false
+			if !enableKey {
+				isKey = true
+			} else if len(p.conf.Profiler.Key) == 0 {
+				isKey = true
+			}
+
+			if !isKey && val.Key() == p.conf.Profiler.Key {
+				isKey = true
+			}
+
+			isVal := false
+			if !enableVal {
+				isVal = true
+			} else if len(p.conf.Profiler.Val) == 0 {
+				isVal = true
+			}
+
+			if !isVal && val.Val(false) == p.conf.Profiler.Val {
+				isVal = true
+			}
+
+			if isKey && isVal {
+				p.conf.Profiler.Trace = true
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (p *Profiler) ValList(data []entity.ValList, enableVal, enableRefVal bool) (valList entity.ValList) {
+	for _, list := range data {
+		for _, v := range list {
+			if (enableVal && v.Val(false) == p.conf.Profiler.Val) ||
+				(enableRefVal && v.Val(false) == p.conf.Profiler.RefVal) {
+				valList = append(valList, v)
+			}
+		}
+	}
+
+	return
+}
+
+func (p *Profiler) Rel(rel entity.RelationInterface, enableRefTab, enableRefCol bool) bool {
+	isRefTab := false
+	if !enableRefTab {
+		isRefTab = true
+	} else if rel.RefTab() == p.conf.Profiler.RefTab {
+		isRefTab = true
+	}
+
+	isRefKey := false
+	if !enableRefCol {
+		isRefKey = true
+	} else if rel.RefCol() == p.conf.Profiler.RefKey {
+		isRefKey = true
+	}
+
+	return isRefTab && isRefKey
+}
+
+func (p *Profiler) StrList(list []string, enableVal, enableRefVal bool) bool {
+	isVal := false
+	if !enableVal {
+		isVal = true
+	}
+
+	isRefVal := false
+	if !enableRefVal {
+		isRefVal = true
+	}
+	for _, v := range list {
+		if !isVal && v == p.conf.Profiler.Val {
+			isVal = true
+		}
+		if !isRefVal && v == p.conf.Profiler.RefVal {
+			isRefVal = true
+		}
+	}
+
+	return isVal && isRefVal
 }

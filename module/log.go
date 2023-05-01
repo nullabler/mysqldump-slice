@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"mysqldump-slice/config"
+	"mysqldump-slice/entity"
 	"os"
 )
 
@@ -13,8 +14,13 @@ type LogInterface interface {
 	Infof(string, ...any)
 	Error(error)
 	Dump(data ...interface{})
-	Prof(label, sql string) *Profiler
+	Debug(label, sql string)
 	State(string)
+	ProfRowList(tabName string, rows []*entity.Row, enableUsed, enableKey, enableVal bool) bool
+	ProfRel(tabName string, rel entity.RelationInterface, enableRefTab, enableRefCol bool) bool
+	ProfStrList(list []string, enableVal, enableRefVal bool) bool
+	ProfValList(tabName string, valList []entity.ValList, enableVal, enableRefVal bool) entity.ValList
+	ProfTraceDep(tabName string, rel entity.RelationInterface)
 }
 
 type Log struct {
@@ -56,17 +62,10 @@ func (l *Log) Dump(data ...interface{}) {
 	log.Printf("%+v\n", data)
 }
 
-func (l *Log) Prof(label, sql string) *Profiler {
-	if l.conf.Debug && !l.conf.Profiler.Active {
+func (l *Log) Debug(label, sql string) {
+	if l.conf.Debug {
 		log.Printf("Debug[%s]: %+v\n", label, sql)
 	}
-
-	if l.conf.Profiler.Active {
-		l.prof.PushHead("++++++++++" + label + "+++++++++++++")
-		l.prof.PushHead(sql)
-	}
-
-	return l.prof
 }
 
 func (l *Log) State(filename string) {
@@ -76,4 +75,44 @@ func (l *Log) State(filename string) {
 	}
 
 	l.Printf("Save dump: %s......Done (%.2f Mb)", filename, (float64)(f.Size()/1024)/1024)
+}
+
+func (l *Log) ProfRowList(tabName string, rows []*entity.Row, enableUsed, enableKey, enableVal bool) bool {
+	if !l.prof.Active() || !l.prof.TabName(tabName) {
+		return false
+	}
+
+	return l.prof.RowList(rows, enableUsed, enableKey, enableVal)
+}
+
+func (l *Log) ProfRel(tabName string, rel entity.RelationInterface, enableRefTab, enableRefCol bool) bool {
+	if !l.prof.Active() || !l.prof.TabName(tabName) {
+		return false
+	}
+
+	return l.prof.Rel(rel, enableRefTab, enableRefCol)
+}
+
+func (l *Log) ProfStrList(list []string, enableVal, enableRefVal bool) bool {
+	if !l.prof.Active() {
+		return false
+	}
+
+	return l.prof.StrList(list, enableVal, enableRefVal)
+}
+
+func (l *Log) ProfValList(tabName string, valList []entity.ValList, enableVal, enableRefVal bool) entity.ValList {
+	if !l.prof.Active() || !l.prof.TabName(tabName) {
+		return nil
+	}
+
+	return l.prof.ValList(valList, enableVal, enableRefVal)
+}
+
+func (l *Log) ProfTraceDep(tabName string, rel entity.RelationInterface) {
+	if !l.prof.Active() || !l.prof.TraceDep(tabName, rel.RefTab()) {
+		return
+	}
+
+	l.Printf("Push dependence Table: %s RefTab: %s, RefCol: %s", tabName, rel.RefTab(), rel.RefCol())
 }

@@ -1,22 +1,30 @@
 package entity
 
 type TabInterface interface {
+	Name() string
 	isExist(valList []*Value) bool
 	isUsed(valList []*Value) bool
 	Rows() []*Row
 	Push(valList []*Value)
 	Pull() []*Row
+	Deep(rel RelationInterface) int
 }
 
 type Tab struct {
-	name string
-	rows []*Row
+	name         string
+	rows         []*Row
+	countRelDeep map[RelationInterface]int
 }
 
 func NewTab(tabName string) *Tab {
 	return &Tab{
-		name: tabName,
+		name:         tabName,
+		countRelDeep: make(map[RelationInterface]int),
 	}
+}
+
+func (tab *Tab) Name() string {
+	return tab.name
 }
 
 func (tab *Tab) Rows() []*Row {
@@ -74,4 +82,10 @@ func (tab *Tab) Push(valList []*Value) {
 	}
 
 	tab.rows = append(tab.rows, NewRow(valList))
+}
+
+func (tab *Tab) Deep(rel RelationInterface) int {
+	tab.countRelDeep[rel]++
+
+	return tab.countRelDeep[rel]
 }

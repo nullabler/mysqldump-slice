@@ -11,6 +11,7 @@ import (
 )
 
 type App struct {
+	conf   *config.Conf
 	loader *service.Loader
 	dumper *service.Dumper
 	log    module.LogInterface
@@ -23,6 +24,7 @@ type Callback func(*entity.Collect) error
 
 func NewApp(conf *config.Conf, log module.LogInterface, db repository.DbInterface, cli repository.CliInterface) *App {
 	return &App{
+		conf:   conf,
 		loader: service.NewLoader(conf, db, cli, log), dumper: service.NewDumper(conf, cli, db, log), log: log,
 		pool: make(map[string]Callback),
 	}
@@ -154,28 +156,55 @@ func (app *App) loadDepAndDumpSlice(collect *entity.Collect) error {
 		}
 
 		for _, table := range collect.Tables() {
-			rows := collect.Tab(table.Name).Pull()
-			if len(rows) == 0 {
+			tab := collect.Tab(table.Name)
+			rows := tab.Pull()
+
+			if app.log.ProfRowList(tab.Name(), rows, false, false, true) {
+				app.log.Printf("Find in Application Table: %s RowList: %s", tab.Name(), app.conf.Profiler.Val)
+			}
+
+			lenRows := len(rows)
+			if lenRows == 0 {
 				continue
 			} else {
 				isLoop = true
 			}
 
-			app.log.Infof("- %s......Loading", table.Name)
+			app.log.Infof("- %s (%d)......Loading", tab.Name(), lenRows)
 
-			for _, rel := range collect.RelList(table.Name) {
-				if err := app.loader.Dependences(collect, rel, table.Name, rows); err != nil {
+			for _, rel := range collect.RelList(tab.Name()) {
+				if !app.deep(tab, rel) {
+					app.log.Infof("^ Skip deep RefTab: %s RefCol: %s", rel.RefTab(), rel.RefCol())
+					continue
+				}
+
+				if err := app.loader.Dependences(collect, rel, tab.Name(), rows); err != nil {
 					return err
 				}
 			}
 
-			if err := app.dumper.Slice(collect, table.Name, rows); err != nil {
+			if err := app.dumper.Slice(collect, tab.Name(), rows); err != nil {
 				return err
 			}
 
-			app.log.Infof("- %s......Done", table.Name)
+			app.log.Infof("- %s......Done", tab.Name())
 		}
 	}
 
 	return nil
+}
+
+func (app *App) deep(tab entity.TabInterface, rel entity.RelationInterface) bool {
+	spec, ok := app.conf.Specs(tab.Name())
+	if !ok {
+		return true
+	}
+
+	for _, fk := range spec.Fk {
+		if fk.Deep > 0 && fk.FkTab == rel.RefTab() {
+			return tab.Deep(rel) <= fk.Deep
+		}
+	}
+
+	return true
 }

@@ -5,6 +5,8 @@ import (
 	"mysqldump-slice/helper"
 )
 
+type ValList []*Value
+
 type Value struct {
 	key string
 	val string
@@ -25,7 +27,7 @@ func (v *Value) Sprint(isEscape bool) string {
 	return fmt.Sprintf("`%s` = %s", v.key, v.Val(true))
 }
 
-func (v *Value) contains(valList []*Value) bool {
+func (v *Value) contains(valList ValList) bool {
 	for _, val := range valList {
 		if v.key == val.key && v.val == val.val {
 			return true
