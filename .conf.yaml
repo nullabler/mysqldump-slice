@@ -9,6 +9,14 @@ max-lifetime-connect-minute: 5
 max-lifetime-query-second: 3
 log: Yes
 
+profiler:
+  active: false
+  # table: user
+  # val: "xxxx-uu-oooo"
+  # ref-tab: category
+  # ref-val: "ccc-oo-eeee"
+  # trace-dep: user_category
+
 filename:
   path: "./target/"
   prefix: "short"
@@ -23,7 +31,6 @@ tables:
     - test 
   specs:
     - name: user
-      is-leader: true
       pk:
         - uuid
       fk:
@@ -31,13 +38,9 @@ tables:
           fk_tab: category
           fk_col: id
           limit: 3
+          deep: 1
       sort:
         - updated_at
       limit: 5
+      is-greedy: true
       condition: "updated_at > NOW() - INTERVAL 1 WEEK"
-
-profiler:
-  active: true
-  table: user
-  key: id
-  val: 24
