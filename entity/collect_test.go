@@ -8,7 +8,7 @@ func TestPushValListSuccess(t *testing.T) {
 	c := NewCollect()
 	c.PushPkList("test", []string{"uuid", "ulid"})
 
-	valList := [][]*Value{}
+	valList := []ValList{}
 	valList = append(valList, []*Value{
 		NewValue("uuid", "xxxx-yyyy-0001"),
 		NewValue("ulid", "dddd-cccc-0001"),
@@ -34,7 +34,7 @@ func TestPushValListFail(t *testing.T) {
 	c := NewCollect()
 	c.PushPkList("test", []string{"uuid", "ulid"})
 
-	valList := [][]*Value{}
+	valList := []ValList{}
 	valList = append(valList, []*Value{NewValue("uuid", "4")})
 
 	if c.Tab("test") != nil {
