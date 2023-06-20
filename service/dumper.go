@@ -37,6 +37,10 @@ func (d *Dumper) RmFile() error {
 }
 
 func (d *Dumper) Struct() error {
+	if err := d.cli.InitHeaderToDump(); err != nil {
+		return err
+	}
+
 	return d.cli.ExecDump(fmt.Sprintf("--single-transaction --no-data --skip-comments --routines %s", d.conf.DbName()))
 }
 
@@ -57,7 +61,7 @@ func (d *Dumper) Slice(collect entity.CollectInterface, tabName string, rows []*
 	for _, where := range d.db.Sql().WhereSlice(rows, true) {
 		if len(where) > 0 {
 			err = d.cli.ExecDump(fmt.Sprintf(
-				`--single-transaction --skip-add-locks --skip-quick --skip-triggers --skip-comments --no-create-info %s %s --where="%s"`,
+				`--skip-routines --quick --skip-tz-utc --single-transaction --skip-add-locks --skip-add-drop-table --skip-disable-keys --skip-set-charset --skip-triggers --skip-comments --no-create-info %s %s --where="%s"`,
 				d.conf.Database,
 				tabName,
 				where,

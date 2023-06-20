@@ -21,7 +21,7 @@ build: ## build slice [make build]
 
 build-centos: ## build slice for centos [make build-centos]
 	make clear
-	docker run --rm -v ${PWD}:/mysqldump-slice -w /mysqldump-slice lunny/centos-go:latest go build -o target/slice cmd/slice.go
+	docker run --rm -v ${PWD}:/mysqldump-slice -w /mysqldump-slice lunny/centos-go:latest go build -ldflags="-X 'main.Version=`git describe --tags --abbrev=0`'" -o target/slice cmd/slice.go
 	sudo chown ${USER}:${USER} target/slice
 
 run: ## run slice [make run]

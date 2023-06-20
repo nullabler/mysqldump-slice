@@ -10,9 +10,12 @@ import (
 	"os"
 )
 
+var Version = "v0.1-dev"
+
 func main() {
 	if len(os.Args) < 2 {
-		log.Fatal("Not found yaml file")
+		log.Printf("Slice version: %s \n", Version)
+		return
 	}
 
 	f, err := os.CreateTemp("", "")
@@ -22,7 +25,7 @@ func main() {
 	f.Close()
 	defer os.Remove(f.Name())
 
-	conf, err := config.NewConf(os.Args[1], f.Name())
+	conf, err := config.NewConf(Version, os.Args[1], f.Name())
 	if err != nil {
 		log.Fatal(err)
 	}

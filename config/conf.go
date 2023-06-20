@@ -25,17 +25,19 @@ type Conf struct {
 	File   File   `yaml:"filename"`
 	Tables Tables `yaml:"tables"`
 
-	shell string
-	def   Default
+	version string
+	shell   string
+	def     Default
 
 	Tmp      string
 	LimitCli int
 }
 
-func NewConf(pathToFile, tmpFilename string) (*Conf, error) {
+func NewConf(version, pathToFile, tmpFilename string) (*Conf, error) {
 	conf := &Conf{
-		Debug:    false,
+		version:  version,
 		shell:    "/bin/sh",
+		Debug:    false,
 		Tmp:      tmpFilename,
 		LimitCli: 30,
 		def: Default{
@@ -56,6 +58,10 @@ func NewConf(pathToFile, tmpFilename string) (*Conf, error) {
 	}
 
 	return conf, nil
+}
+
+func (conf *Conf) Version() string {
+	return conf.version
 }
 
 func (conf *Conf) DbName() string {

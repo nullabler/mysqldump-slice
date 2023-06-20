@@ -8,6 +8,7 @@ import (
 )
 
 type CliInterface interface {
+	InitHeaderToDump() error
 	ExecDump(call string) error
 	RmFile(filename string) error
 	Save(filename string) error
@@ -23,6 +24,14 @@ func NewCli(conf *config.Conf, exec addapter.ExecInterface) (*Cli, error) {
 		conf: conf,
 		exec: exec,
 	}, nil
+}
+
+func (c *Cli) InitHeaderToDump() error {
+	return c.exec.Command(fmt.Sprintf(
+		"echo '-- Slicer version: %s \n' >> %s",
+		c.conf.Version(),
+		c.conf.Tmp,
+	))
 }
 
 func (c *Cli) ExecDump(call string) error {
