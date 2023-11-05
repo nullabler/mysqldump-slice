@@ -8,7 +8,7 @@ ifdef watch
 else
 	$(eval OPTS=${OPTS} -d)
 endif
-	docker-compose up ${OPTS} --remove-orphans
+	docker-compose --env-file .env.local up ${OPTS} --remove-orphans
 
 down: ## stop project [make down]
 	docker-compose down

@@ -7,9 +7,10 @@ services:
       dockerfile: .build/docker/Dockerfile
     volumes:
       - '.:/app'
+      - '${PATH_TO_CONF}:/app/conf.yaml'
     working_dir: /app
 
 networks:
   default:
-    name: getic 
+    name: ${NETWORK_NAME}
     external: true

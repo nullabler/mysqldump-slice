@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"mysqldump-slice/addapter"
 	"mysqldump-slice/config"
+	"time"
 )
 
 type CliInterface interface {
@@ -28,8 +29,9 @@ func NewCli(conf *config.Conf, exec addapter.ExecInterface) (*Cli, error) {
 
 func (c *Cli) InitHeaderToDump() error {
 	return c.exec.Command(fmt.Sprintf(
-		"echo '-- Slicer version: %s \n' >> %s",
+		"echo '-- Slicer version: %s \n-- DateTime: %s\n' >> %s",
 		c.conf.Version(),
+		time.Now().Format("2006.01.02 15:04:05"),
 		c.conf.Tmp,
 	))
 }
