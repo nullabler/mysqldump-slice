@@ -13,4 +13,4 @@ RUN go mod tidy
 RUN go get github.com/githubnemo/CompileDaemon
 RUN go install github.com/githubnemo/CompileDaemon
 
-ENTRYPOINT CompileDaemon --build="go build -o target/slice-dev cmd/slice.go" --command="./target/slice-dev /app/dump_slice.yaml"
+ENTRYPOINT CompileDaemon --build="go build -o target/slice-dev cmd/slice.go" --command="./target/slice-dev /app/conf.yaml"
