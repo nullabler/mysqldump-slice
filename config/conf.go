@@ -9,6 +9,7 @@ import (
 )
 
 type Conf struct {
+	ConfVersion      string `yaml:"conf-version"`
 	User             string `yaml:"user"`
 	Password         string `yaml:"password"`
 	Host             string `yaml:"host"`

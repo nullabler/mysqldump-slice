@@ -5,4 +5,3 @@ vendor
 conf.yaml
 db.cnf
 target
-release_dump_slice.yaml
