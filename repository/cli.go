@@ -94,16 +94,17 @@ func (c *Cli) isValidFilename(filename string) error {
 
 func (c *Cli) auth() (string, error) {
 	if len(c.conf.DefaultExtraFile) > 0 {
-		return fmt.Sprintf("--defaults-extra-file=%s", c.conf.DefaultExtraFile), nil
+		return fmt.Sprintf("--defaults-extra-file=%s -P %s", c.conf.DefaultExtraFile, c.conf.Port), nil
 	}
 
 	if len(c.conf.User) == 0 || len(c.conf.Host) == 0 {
 		return "", errors.New("fail auth")
 	}
 
-	return fmt.Sprintf("-u%s -p%s -h %s",
+	return fmt.Sprintf("-u%s -p%s -h %s -P %s",
 		c.conf.User,
 		c.conf.Password,
 		c.conf.Host,
+		c.conf.Port,
 	), nil
 }

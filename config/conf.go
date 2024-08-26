@@ -13,6 +13,7 @@ type Conf struct {
 	User             string `yaml:"user"`
 	Password         string `yaml:"password"`
 	Host             string `yaml:"host"`
+	Port             string `yaml:"port"`
 	Database         string `yaml:"database"`
 	DefaultExtraFile string `yaml:"default-extra-file"`
 
@@ -70,8 +71,8 @@ func (conf *Conf) DbName() string {
 }
 
 func (conf *Conf) DbUrl() string {
-	return fmt.Sprintf("%s:%s@tcp(%s)/%s",
-		conf.User, conf.Password, conf.Host, conf.Database)
+	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
+		conf.User, conf.Password, conf.Host, conf.Port, conf.Database)
 }
 
 func (conf *Conf) Shell() string {
