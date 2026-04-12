@@ -85,12 +85,16 @@ func (d *Dumper) Save() error {
 }
 
 func (d *Dumper) Filename() (string, error) {
-	prefix := ""
+	parts := make([]string, 0, 3)
 	if len(d.conf.File.Prefix) > 0 {
-		prefix = d.conf.File.Prefix + "_"
+		parts = append(parts, d.conf.File.Prefix)
 	}
 
-	date := time.Now().Format(d.conf.DateFormat())
+	if len(strings.TrimSpace(d.conf.File.DateFormat)) > 0 {
+		parts = append(parts, time.Now().Format(d.conf.DateFormat()))
+	}
+
+	parts = append(parts, d.conf.Database)
 
 	tail := ""
 	if d.conf.File.Gzip {
@@ -98,11 +102,9 @@ func (d *Dumper) Filename() (string, error) {
 	}
 
 	filename := fmt.Sprintf(
-		"%s%s%s_%s.sql%s",
+		"%s%s.sql%s",
 		d.conf.File.Path,
-		prefix,
-		date,
-		d.conf.Database,
+		strings.Join(parts, "_"),
 		tail,
 	)
 

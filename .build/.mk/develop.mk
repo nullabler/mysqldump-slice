@@ -13,7 +13,7 @@ dev: ## run development watching [make dev]
 	watch go test ./service/ -v
 
 clear: ## clear target direct [make clear] 
-	sudo rm -fr target/*
+	rm -fr target/*
 
 build: ## build slice [make build]
 	make clear
